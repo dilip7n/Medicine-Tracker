@@ -563,6 +563,9 @@
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
 
+        // Load medicines from localStorage if available
+        loadSavedMedicines();
+
         // Load saved data for today
         loadTracking(today);
 
@@ -618,16 +621,25 @@
                 };
             });
             
-            // Store in memory (not localStorage due to sandbox restrictions)
-            if (!window.medicineData) {
-                window.medicineData = {};
+            // Store in localStorage for persistence
+            try {
+                let allData = JSON.parse(localStorage.getItem('medicineData')) || {};
+                allData[date] = data;
+                localStorage.setItem('medicineData', JSON.stringify(allData));
+            } catch (e) {
+                console.error('Error saving to localStorage:', e);
             }
-            window.medicineData[date] = data;
         }
 
         function loadTracking(date) {
-            // Load from memory
-            const data = window.medicineData?.[date] || {};
+            // Load from localStorage
+            let allData = {};
+            try {
+                allData = JSON.parse(localStorage.getItem('medicineData')) || {};
+            } catch (e) {
+                console.error('Error loading from localStorage:', e);
+            }
+            const data = allData[date] || {};
             
             document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
                 const medicine = checkbox.dataset.medicine;
@@ -787,6 +799,9 @@
             
             tbody.appendChild(newRow);
             
+            // Save medicine list to localStorage
+            saveMedicineList();
+            
             // Attach event listeners to new elements
             const checkbox = newRow.querySelector('.taken-checkbox');
             const select = newRow.querySelector('.timing-select');
@@ -820,6 +835,97 @@
             updateSummary();
         }
 
+        // Save medicine list to localStorage
+        function saveMedicineList() {
+            const medicines = [];
+            document.querySelectorAll('#medicineTable tbody tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                medicines.push({
+                    name: cells[0].textContent,
+                    use: cells[1].textContent,
+                    reason: cells[2].textContent
+                });
+            });
+            try {
+                localStorage.setItem('medicineList', JSON.stringify(medicines));
+            } catch (e) {
+                console.error('Error saving medicine list:', e);
+            }
+        }
+
+        // Load medicines from localStorage on page load
+        function loadSavedMedicines() {
+            try {
+                const savedMedicines = localStorage.getItem('medicineList');
+                if (savedMedicines) {
+                    const medicines = JSON.parse(savedMedicines);
+                    const tbody = document.querySelector('#medicineTable tbody');
+                    
+                    // Only load if different from default
+                    if (medicines.length !== 8 || medicines[0].name !== 'Dytor Plus 20') {
+                        tbody.innerHTML = '';
+                        
+                        medicines.forEach(med => {
+                            const newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td class="medicine-name">${med.name}</td>
+                                <td>${med.use}</td>
+                                <td>${med.reason}</td>
+                                <td class="checkbox-cell">
+                                    <input type="checkbox" class="taken-checkbox" data-medicine="${med.name}">
+                                </td>
+                                <td>
+                                    <select class="timing-select" disabled data-medicine="${med.name}">
+                                        <option value="">Select timing</option>
+                                        <option value="Before Breakfast">Before Breakfast</option>
+                                        <option value="After Breakfast">After Breakfast</option>
+                                        <option value="Before Lunch">Before Lunch</option>
+                                        <option value="After Lunch">After Lunch</option>
+                                        <option value="Before Dinner">Before Dinner</option>
+                                        <option value="After Dinner">After Dinner</option>
+                                        <option value="Bedtime">Bedtime</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
+                                </td>
+                            `;
+                            tbody.appendChild(newRow);
+                            
+                            // Attach event listeners
+                            const checkbox = newRow.querySelector('.taken-checkbox');
+                            const select = newRow.querySelector('.timing-select');
+                            const notesInput = newRow.querySelector('.notes-input');
+                            
+                            checkbox.addEventListener('change', function() {
+                                const medicine = this.dataset.medicine;
+                                const selectElem = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
+                                if (this.checked) {
+                                    selectElem.disabled = false;
+                                } else {
+                                    selectElem.disabled = true;
+                                    selectElem.value = '';
+                                }
+                                saveTracking();
+                                updateSummary();
+                            });
+                            
+                            select.addEventListener('change', function() {
+                                saveTracking();
+                                updateSummary();
+                            });
+                            
+                            notesInput.addEventListener('input', function() {
+                                saveTracking();
+                            });
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading saved medicines:', e);
+            }
+        }
+
         // Update summary when checkboxes or selects change
         document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
             const originalListener = checkbox.onchange;
@@ -840,9 +946,16 @@
 
         // Export data as JSON file
         function exportData() {
+            let trackingData = {};
+            try {
+                trackingData = JSON.parse(localStorage.getItem('medicineData')) || {};
+            } catch (e) {
+                console.error('Error loading data for export:', e);
+            }
+            
             const exportObj = {
                 medicines: [],
-                trackingData: window.medicineData || {}
+                trackingData: trackingData
             };
             
             // Get all medicines from table
@@ -875,8 +988,12 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    // Restore tracking data
-                    window.medicineData = data.trackingData || {};
+                    // Restore tracking data to localStorage
+                    try {
+                        localStorage.setItem('medicineData', JSON.stringify(data.trackingData || {}));
+                    } catch (err) {
+                        console.error('Error saving imported data:', err);
+                    }
                     
                     // Clear existing medicines (except default ones)
                     const tbody = document.querySelector('#medicineTable tbody');
