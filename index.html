@@ -174,6 +174,53 @@
             border-color: var(--color-primary);
         }
 
+        .hide-btn {
+            padding: var(--space-8);
+            background-color: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .hide-btn:hover {
+            background-color: var(--color-background);
+        }
+
+        tr.hidden-medicine {
+            opacity: 0.4;
+            background-color: var(--color-background);
+        }
+
+        tr.hidden-medicine td {
+            text-decoration: line-through;
+        }
+
+        .show-hidden-section {
+            margin-top: var(--space-16);
+            padding: var(--space-12);
+            background-color: var(--color-background);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+            font-size: 14px;
+        }
+
+        .show-hidden-section button {
+            margin-left: var(--space-8);
+            padding: var(--space-8) var(--space-12);
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-base);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .show-hidden-section button:hover {
+            background-color: var(--color-primary-hover);
+        }
+
         .reset-btn {
             margin-top: var(--space-20);
             padding: var(--space-12) var(--space-20);
@@ -350,6 +397,7 @@
                         <th class="checkbox-cell">Taken</th>
                         <th>When</th>
                         <th>Notes</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -387,6 +435,9 @@
                         <td>
                             <input type="text" class="notes-input" data-medicine="Dytor Plus 20" placeholder="Add notes...">
                         </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Dytor Plus 20')" title="Hide medicine">👁️</button>
+                        </td>
                     </tr>
                     <tr>
                         <td class="medicine-name">Panfirst 40</td>
@@ -421,6 +472,9 @@
                         </td>
                         <td>
                             <input type="text" class="notes-input" data-medicine="Panfirst 40" placeholder="Add notes...">
+                        </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Panfirst 40')" title="Hide medicine">👁️</button>
                         </td>
                     </tr>
                     <tr>
@@ -457,6 +511,9 @@
                         <td>
                             <input type="text" class="notes-input" data-medicine="Coralan 5mg" placeholder="Add notes...">
                         </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Coralan 5mg')" title="Hide medicine">👁️</button>
+                        </td>
                     </tr>
                     <tr>
                         <td class="medicine-name">Empha 10</td>
@@ -491,6 +548,9 @@
                         </td>
                         <td>
                             <input type="text" class="notes-input" data-medicine="Empha 10" placeholder="Add notes...">
+                        </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Empha 10')" title="Hide medicine">👁️</button>
                         </td>
                     </tr>
                     <tr>
@@ -527,6 +587,9 @@
                         <td>
                             <input type="text" class="notes-input" data-medicine="Bronac 600" placeholder="Add notes...">
                         </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Bronac 600')" title="Hide medicine">👁️</button>
+                        </td>
                     </tr>
                     <tr>
                         <td class="medicine-name">Dytor 10</td>
@@ -561,6 +624,9 @@
                         </td>
                         <td>
                             <input type="text" class="notes-input" data-medicine="Dytor 10" placeholder="Add notes...">
+                        </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Dytor 10')" title="Hide medicine">👁️</button>
                         </td>
                     </tr>
                     <tr>
@@ -597,6 +663,9 @@
                         <td>
                             <input type="text" class="notes-input" data-medicine="Shimaneuron" placeholder="Add notes...">
                         </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Shimaneuron')" title="Hide medicine">👁️</button>
+                        </td>
                     </tr>
                     <tr>
                         <td class="medicine-name">Actrapid (Insulin)</td>
@@ -632,12 +701,20 @@
                         <td>
                             <input type="text" class="notes-input" data-medicine="Actrapid" placeholder="Add notes...">
                         </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('Actrapid')" title="Hide medicine">👁️</button>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+        <div class="show-hidden-section" id="hiddenMedicinesInfo" style="display: none;">
+            <span id="hiddenCount">0</span> medicine(s) currently hidden.
+            <button onclick="showAllMedicines()">Show All</button>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; margin-top: 16px;">
             <button class="reset-btn" onclick="resetToday()">Reset Today's Tracking</button>
             <button class="reset-btn" onclick="addMedicine()" style="background-color: var(--color-text-secondary);">Add New Medicine</button>
             <button class="reset-btn" onclick="exportData()" style="background-color: #626c71;">Export Data</button>
@@ -941,6 +1018,9 @@
                 <td>
                     <input type="text" class="notes-input" data-medicine="${name}" placeholder="Add notes...">
                 </td>
+                <td>
+                    <button class="hide-btn" onclick="toggleMedicineVisibility('${name}')" title="Hide medicine">👁️</button>
+                </td>
             `;
             
             tbody.appendChild(newRow);
@@ -1050,12 +1130,14 @@
                                         <option value="After Dinner">After Dinner</option>
                                         <option value="Bedtime">Bedtime</option>
                                     </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
-                                </td>
-                            `;
-                            tbody.appendChild(newRow);
+                                </td>                        <td>
+                            <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
+                        </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('${med.name}')" title="Hide medicine">👁️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(newRow);
                             
                             // Attach event listeners
                             const checkbox = newRow.querySelector('.taken-checkbox');
@@ -1115,6 +1197,88 @@
 
         // Initialize summary on page load
         updateSummary();
+
+        // Toggle medicine visibility
+        function toggleMedicineVisibility(medicineName) {
+            const rows = document.querySelectorAll('#medicineTable tbody tr');
+            let targetRow = null;
+            
+            rows.forEach(row => {
+                const nameCell = row.querySelector('.medicine-name');
+                if (nameCell && nameCell.textContent === medicineName) {
+                    targetRow = row;
+                }
+            });
+            
+            if (targetRow) {
+                targetRow.classList.toggle('hidden-medicine');
+                saveHiddenMedicines();
+                updateHiddenCount();
+                updateSummary();
+            }
+        }
+
+        // Save hidden medicines to localStorage
+        function saveHiddenMedicines() {
+            const hiddenMedicines = [];
+            document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').forEach(row => {
+                const nameCell = row.querySelector('.medicine-name');
+                if (nameCell) {
+                    hiddenMedicines.push(nameCell.textContent);
+                }
+            });
+            try {
+                localStorage.setItem('hiddenMedicines', JSON.stringify(hiddenMedicines));
+            } catch (e) {
+                console.error('Error saving hidden medicines:', e);
+            }
+        }
+
+        // Load hidden medicines from localStorage
+        function loadHiddenMedicines() {
+            try {
+                const hiddenMedicines = JSON.parse(localStorage.getItem('hiddenMedicines')) || [];
+                hiddenMedicines.forEach(medicineName => {
+                    const rows = document.querySelectorAll('#medicineTable tbody tr');
+                    rows.forEach(row => {
+                        const nameCell = row.querySelector('.medicine-name');
+                        if (nameCell && nameCell.textContent === medicineName) {
+                            row.classList.add('hidden-medicine');
+                        }
+                    });
+                });
+                updateHiddenCount();
+            } catch (e) {
+                console.error('Error loading hidden medicines:', e);
+            }
+        }
+
+        // Update hidden medicines count
+        function updateHiddenCount() {
+            const hiddenCount = document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').length;
+            const hiddenInfo = document.getElementById('hiddenMedicinesInfo');
+            const countSpan = document.getElementById('hiddenCount');
+            
+            if (hiddenCount > 0) {
+                hiddenInfo.style.display = 'block';
+                countSpan.textContent = hiddenCount;
+            } else {
+                hiddenInfo.style.display = 'none';
+            }
+        }
+
+        // Show all hidden medicines
+        function showAllMedicines() {
+            document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').forEach(row => {
+                row.classList.remove('hidden-medicine');
+            });
+            saveHiddenMedicines();
+            updateHiddenCount();
+            updateSummary();
+        }
+
+        // Load hidden medicines on page load
+        loadHiddenMedicines();
 
         // Export data as JSON file
         function exportData() {
@@ -1215,6 +1379,9 @@
                         </td>
                         <td>
                             <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
+                        </td>
+                        <td>
+                            <button class="hide-btn" onclick="toggleMedicineVisibility('${med.name}')" title="Hide medicine">👁️</button>
                         </td>
                     `;
                     tbody.appendChild(newRow);
