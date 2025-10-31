@@ -30,6 +30,7 @@
         <button class="add" id="addBtn">Add Medicine</button>
         <button class="export" id="exportBtn">Export CSV</button>
         <button class="clear" id="clearBtn">Clear All</button>
+        <button class="export" onclick="save(); alert('Data saved to Google Sheets!')">💾 Force Save</button>
     </div>
     <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
     <table>
@@ -55,25 +56,71 @@
         document.getElementById('date').value = date;
         
         function save() { 
+            // Also save to localStorage as backup
+            localStorage.setItem('medicines', JSON.stringify(meds));
+            
+            // Show saving indicator
+            const statusEl = document.getElementById('status') || createStatusElement();
+            statusEl.textContent = '💾 Saving...';
+            statusEl.style.color = 'orange';
+            
             fetch(SHEET_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(meds)
-            }).catch(err => console.error('Save error:', err));
+            }).then(response => {
+                statusEl.textContent = '✅ Saved to Google Sheets';
+                statusEl.style.color = 'green';
+                setTimeout(() => statusEl.textContent = '', 2000);
+            }).catch(err => {
+                console.error('Save error:', err);
+                statusEl.textContent = '❌ Save failed - using local backup';
+                statusEl.style.color = 'red';
+                setTimeout(() => statusEl.textContent = '', 3000);
+            });
+        }
+        
+        function createStatusElement() {
+            const statusEl = document.createElement('div');
+            statusEl.id = 'status';
+            statusEl.style.cssText = 'font-weight:bold; margin:10px 0; padding:5px;';
+            document.querySelector('.controls').appendChild(statusEl);
+            return statusEl;
         }
         
         function load() {
+            // Show loading indicator
+            const statusEl = document.getElementById('status') || createStatusElement();
+            statusEl.textContent = '📡 Loading from Google Sheets...';
+            statusEl.style.color = 'blue';
+            
             fetch(SHEET_URL)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
                 .then(data => {
-                    meds = data;
+                    meds = data || [];
+                    statusEl.textContent = `✅ Loaded ${meds.length} medicines from Google Sheets`;
+                    statusEl.style.color = 'green';
+                    setTimeout(() => statusEl.textContent = '', 2000);
                     render();
                 })
                 .catch(err => {
                     console.error('Load error:', err);
-                    // Try to migrate from localStorage if available
-                    migrateFromLocalStorage();
+                    statusEl.textContent = '⚠️ Loading from local backup...';
+                    statusEl.style.color = 'orange';
+                    
+                    // Try to load from localStorage backup
+                    const localData = localStorage.getItem('medicines');
+                    if (localData) {
+                        meds = JSON.parse(localData);
+                        statusEl.textContent = `📱 Loaded ${meds.length} medicines from local backup`;
+                        setTimeout(() => statusEl.textContent = '', 3000);
+                    } else {
+                        statusEl.textContent = '❌ No data found. Start adding medicines.';
+                        meds = [];
+                    }
                     render();
                 });
         }
