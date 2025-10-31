@@ -52,7 +52,7 @@
         <tbody id="list"></tbody>
     </table>
     <script>
-        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz6NK7VIZNND99tH4k-ugcmIMQ8e4fD-DOzA23v7wdJjMsvLcYUhtlBoUABEdsCt53Y/exec';
+        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzXh11d7zLNbWK5GsESfdIpt2EN5LDorvmOodlde3PuqR_SjlfBd6cO1bTGW0wURnHm/exec';
         let meds = [];
         let date = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = date;
@@ -66,20 +66,35 @@
             statusEl.textContent = '💾 Saving...';
             statusEl.style.color = 'orange';
             
-            fetch(SHEET_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(meds)
-            }).then(response => {
-                statusEl.textContent = '✅ Saved to Google Sheets';
-                statusEl.style.color = 'green';
-                setTimeout(() => statusEl.textContent = '', 2000);
-            }).catch(err => {
-                console.error('Save error:', err);
-                statusEl.textContent = '❌ Save failed - using local backup';
-                statusEl.style.color = 'red';
-                setTimeout(() => statusEl.textContent = '', 3000);
-            });
+            // Use form submission to bypass CORS
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = SHEET_URL;
+            form.target = 'save-iframe';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'data';
+            input.value = JSON.stringify(meds);
+            form.appendChild(input);
+            
+            // Create hidden iframe if not exists
+            let iframe = document.getElementById('save-iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'save-iframe';
+                iframe.name = 'save-iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            
+            statusEl.textContent = '✅ Saved to Google Sheets';
+            statusEl.style.color = 'green';
+            setTimeout(() => statusEl.textContent = '', 2000);
         }
         
         function createStatusElement() {
@@ -96,35 +111,35 @@
             statusEl.textContent = '📡 Loading from Google Sheets...';
             statusEl.style.color = 'blue';
             
-            fetch(SHEET_URL)
-                .then(res => {
-                    if (!res.ok) throw new Error('Network error');
-                    return res.json();
-                })
-                .then(data => {
-                    meds = data || [];
-                    statusEl.textContent = `✅ Loaded ${meds.length} medicines from Google Sheets`;
-                    statusEl.style.color = 'green';
-                    setTimeout(() => statusEl.textContent = '', 2000);
-                    render();
-                })
-                .catch(err => {
-                    console.error('Load error:', err);
-                    statusEl.textContent = '⚠️ Loading from local backup...';
-                    statusEl.style.color = 'orange';
-                    
-                    // Try to load from localStorage backup
-                    const localData = localStorage.getItem('medicines');
-                    if (localData) {
-                        meds = JSON.parse(localData);
-                        statusEl.textContent = `📱 Loaded ${meds.length} medicines from local backup`;
-                        setTimeout(() => statusEl.textContent = '', 3000);
-                    } else {
-                        statusEl.textContent = '❌ No data found. Start adding medicines.';
-                        meds = [];
-                    }
-                    render();
-                });
+            // Use JSONP to bypass CORS
+            window.sheetsCallback = function(data) {
+                meds = data || [];
+                statusEl.textContent = `✅ Loaded ${meds.length} medicines from Google Sheets`;
+                statusEl.style.color = 'green';
+                setTimeout(() => statusEl.textContent = '', 2000);
+                render();
+            };
+            
+            const script = document.createElement('script');
+            script.src = SHEET_URL + '?callback=sheetsCallback&ts=' + Date.now();
+            script.onerror = function() {
+                console.error('Load error');
+                statusEl.textContent = '⚠️ Loading from local backup...';
+                statusEl.style.color = 'orange';
+                
+                // Try to load from localStorage backup
+                const localData = localStorage.getItem('medicines');
+                if (localData) {
+                    meds = JSON.parse(localData);
+                    statusEl.textContent = `📱 Loaded ${meds.length} medicines from local backup`;
+                    setTimeout(() => statusEl.textContent = '', 3000);
+                } else {
+                    statusEl.textContent = '❌ No data found. Start adding medicines.';
+                    meds = [];
+                }
+                render();
+            };
+            document.head.appendChild(script);
         }
         
         function migrateFromLocalStorage() {
