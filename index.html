@@ -15,7 +15,8 @@
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         th { background: #f0f0f0; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 5px; box-sizing: border-box; }
+        input, select, textarea { width: 100%; padding: 5px; box-sizing: border-box; word-wrap: break-word; white-space: normal; }
+        td { word-wrap: break-word; white-space: normal; }
         .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
         .taken-row { background-color: #f0f0f0; opacity: 0.7; }
         .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
@@ -48,11 +49,32 @@
         <tbody id="list"></tbody>
     </table>
     <script>
-        let meds = JSON.parse(localStorage.getItem('meds') || '[]');
+        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbx0pFhjZnidKDM4BQZSzUwbqkzoJrN36yQSdZ8UpFa0s-Cr3AS88bTMcWETwBFFdW_Z/exec';
+        let meds = [];
         let date = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = date;
         
-        function save() { localStorage.setItem('meds', JSON.stringify(meds)); }
+        function save() { 
+            fetch(SHEET_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(meds)
+            }).catch(err => console.error('Save error:', err));
+        }
+        
+        function load() {
+            fetch(SHEET_URL)
+                .then(res => res.json())
+                .then(data => {
+                    meds = data;
+                    render();
+                })
+                .catch(err => {
+                    console.error('Load error:', err);
+                    render();
+                });
+        }
         
         function parseTime(timeStr) {
             // Parse time like "4pm", "12:30pm", "16:00" to minutes since midnight
@@ -238,7 +260,7 @@
             a.click();
         });
         
-        render();
+        load(); // Load from Google Sheets on startup
     </script>
 </body>
 </html>
