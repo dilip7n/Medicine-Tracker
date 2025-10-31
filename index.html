@@ -5,1517 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medicine Tracker</title>
     <style>
-        :root {
-            --color-background: #fcfcf9;
-            --color-surface: #fffffd;
-            --color-text: #13343b;
-            --color-text-secondary: #626c71;
-            --color-primary: #21808d;
-            --color-primary-hover: #1d7480;
-            --color-border: rgba(94, 82, 64, 0.2);
-            --color-card-border: rgba(94, 82, 64, 0.12);
-            --color-success: #21808d;
-            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --radius-base: 8px;
-            --radius-lg: 12px;
-            --space-8: 8px;
-            --space-12: 12px;
-            --space-16: 16px;
-            --space-20: 20px;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --color-background: #1f2121;
-                --color-surface: #262828;
-                --color-text: #f5f5f5;
-                --color-text-secondary: rgba(167, 169, 169, 0.7);
-                --color-primary: #32b8c6;
-                --color-primary-hover: #2da6b2;
-                --color-border: rgba(119, 124, 124, 0.3);
-                --color-card-border: rgba(119, 124, 124, 0.2);
-            }
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: var(--font-family-base);
-            background-color: var(--color-background);
-            color: var(--color-text);
-            padding: var(--space-20);
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: var(--space-8);
-            color: var(--color-text);
-        }
-
-        .date-selector {
-            margin-bottom: var(--space-20);
-            display: flex;
-            align-items: center;
-            gap: var(--space-12);
-        }
-
-        .date-selector label {
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .date-selector input {
-            padding: var(--space-8) var(--space-12);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-base);
-            background-color: var(--color-surface);
-            color: var(--color-text);
-            font-size: 14px;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            background-color: var(--color-surface);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--color-card-border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background-color: var(--color-background);
-        }
-
-        th {
-            padding: var(--space-16);
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--color-text);
-            border-bottom: 2px solid var(--color-border);
-        }
-
-        td {
-            padding: var(--space-16);
-            border-bottom: 1px solid var(--color-card-border);
-            font-size: 14px;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tbody tr:hover {
-            background-color: var(--color-background);
-        }
-
-        .medicine-name {
-            font-weight: 600;
-            color: var(--color-text);
-        }
-
-        .checkbox-cell {
-            text-align: center;
-        }
-
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: var(--color-primary);
-        }
-
-        select {
-            padding: var(--space-8) var(--space-12);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-base);
-            background-color: var(--color-surface);
-            color: var(--color-text);
-            font-size: 13px;
-            cursor: pointer;
-            min-width: 150px;
-        }
-
-        select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .notes-input {
-            width: 100%;
-            padding: var(--space-8) var(--space-12);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-base);
-            background-color: var(--color-surface);
-            color: var(--color-text);
-            font-size: 13px;
-            font-family: var(--font-family-base);
-            min-width: 150px;
-        }
-
-        .notes-input:focus {
-            outline: 2px solid var(--color-primary);
-            border-color: var(--color-primary);
-        }
-
-        .hide-btn {
-            padding: var(--space-8);
-            background-color: transparent;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-base);
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.2s;
-        }
-
-        .hide-btn:hover {
-            background-color: var(--color-background);
-        }
-
-        tr.hidden-medicine {
-            opacity: 0.4;
-            background-color: var(--color-background);
-        }
-
-        tr.hidden-medicine td {
-            text-decoration: line-through;
-        }
-
-        .show-hidden-section {
-            margin-top: var(--space-16);
-            padding: var(--space-12);
-            background-color: var(--color-background);
-            border-radius: var(--radius-base);
-            border: 1px solid var(--color-card-border);
-            font-size: 14px;
-        }
-
-        .show-hidden-section button {
-            margin-left: var(--space-8);
-            padding: var(--space-8) var(--space-12);
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-base);
-            cursor: pointer;
-            font-size: 13px;
-        }
-
-        .show-hidden-section button:hover {
-            background-color: var(--color-primary-hover);
-        }
-
-        .reset-btn {
-            margin-top: var(--space-20);
-            padding: var(--space-12) var(--space-20);
-            background-color: var(--color-primary);
-            color: white;
-            border: none;
-            border-radius: var(--radius-base);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .reset-btn:hover {
-            background-color: var(--color-primary-hover);
-        }
-
-        .summary-section {
-            margin-top: 32px;
-            padding: var(--space-20);
-            background-color: var(--color-surface);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--color-card-border);
-        }
-
-        .summary-section h2 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: var(--space-16);
-            color: var(--color-text);
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--space-16);
-        }
-
-        .summary-item {
-            padding: var(--space-16);
-            background-color: var(--color-background);
-            border-radius: var(--radius-base);
-            border: 1px solid var(--color-card-border);
-        }
-
-        .summary-item .label {
-            font-size: 13px;
-            color: var(--color-text-secondary);
-            margin-bottom: var(--space-8);
-        }
-
-        .summary-item .count {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--color-primary);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: var(--color-surface);
-            padding: var(--space-20);
-            border-radius: var(--radius-lg);
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-content h2 {
-            font-size: 20px;
-            margin-bottom: var(--space-16);
-        }
-
-        .form-group {
-            margin-bottom: var(--space-16);
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: var(--space-8);
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: var(--space-8) var(--space-12);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-base);
-            background-color: var(--color-surface);
-            color: var(--color-text);
-            font-size: 14px;
-            font-family: var(--font-family-base);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: var(--space-12);
-            justify-content: flex-end;
-            margin-top: var(--space-20);
-        }
-
-        .btn-cancel {
-            padding: var(--space-12) var(--space-20);
-            background-color: transparent;
-            border: 1px solid var(--color-border);
-            color: var(--color-text);
-            border-radius: var(--radius-base);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .btn-cancel:hover {
-            background-color: var(--color-background);
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: var(--space-12);
-            }
-
-            th, td {
-                padding: var(--space-12);
-                font-size: 12px;
-            }
-
-            select {
-                min-width: 120px;
-                font-size: 12px;
-            }
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; font-size: 14px; }
+        .add { background: #4CAF50; color: white; border: none; }
+        .export { background: #2196F3; color: white; border: none; }
+        .clear { background: #f44336; color: white; border: none; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f0f0f0; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 5px; box-sizing: border-box; }
+        .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .taken-row { background-color: #f0f0f0; opacity: 0.7; }
+        .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
+        .schedule-header { background: #e8f4f8; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Daily Medicine Tracker</h1>
-        
-        <div class="date-selector">
-            <label for="trackingDate">Tracking Date:</label>
-            <input type="date" id="trackingDate">
-        </div>
-
-        <div class="table-wrapper">
-            <table id="medicineTable">
-                <thead>
-                    <tr>
-                        <th>Medicine</th>
-                        <th>Use/Indication</th>
-                        <th>Reason</th>
-                        <th>Prescribed Time</th>
-                        <th class="checkbox-cell">Taken</th>
-                        <th>When</th>
-                        <th>Notes</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="medicine-name">Dytor Plus 20</td>
-                        <td>Treats edema (fluid overload), high BP</td>
-                        <td>Reduces excess body fluid & lowers BP</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Dytor Plus 20">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Dytor Plus 20">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Dytor Plus 20">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Dytor Plus 20" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Dytor Plus 20')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Panfirst 40</td>
-                        <td>Acidity, ulcer, GERD, acid reflux</td>
-                        <td>Reduces stomach acid, relieves heartburn</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Panfirst 40">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Panfirst 40">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Panfirst 40">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Panfirst 40" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Panfirst 40')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Coralan 5mg</td>
-                        <td>Stable angina, chronic heart failure</td>
-                        <td>Lowers heart rate, eases heart's workload</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Coralan 5mg">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Coralan 5mg">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Coralan 5mg">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Coralan 5mg" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Coralan 5mg')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Empha 10</td>
-                        <td>Type 2 diabetes, heart risk</td>
-                        <td>Controls blood sugar, heart protection</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Empha 10">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Empha 10">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Empha 10">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Empha 10" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Empha 10')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Bronac 600</td>
-                        <td>COPD, bronchitis, mucus in lungs</td>
-                        <td>Loosens mucus for easier breathing</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Bronac 600">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Bronac 600">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Bronac 600">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Bronac 600" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Bronac 600')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Dytor 10</td>
-                        <td>Treats edema (fluid overload), high BP</td>
-                        <td>Reduces excess body fluid & lowers BP</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Dytor 10">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Dytor 10">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Dytor 10">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Dytor 10" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Dytor 10')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Shimaneuron</td>
-                        <td>Neuropathy, B12 deficiency, anemia</td>
-                        <td>Improves nerve function, energy</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Shimaneuron">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Shimaneuron">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Shimaneuron">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Shimaneuron" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Shimaneuron')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="medicine-name">Actrapid (Insulin)</td>
-                        <td>Diabetes, high blood sugar</td>
-                        <td>Controls blood glucose level</td>
-                        <td>
-                            <select class="prescribed-time" data-medicine="Actrapid">
-                                <option value="">Not set</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td class="checkbox-cell">
-                            <input type="checkbox" class="taken-checkbox" data-medicine="Actrapid">
-                        </td>
-                        <td>
-                            <select class="timing-select" disabled data-medicine="Actrapid">
-                                <option value="">Select timing</option>
-                                <option value="Before Breakfast">Before Breakfast</option>
-                                <option value="After Breakfast">After Breakfast</option>
-                                <option value="Before Lunch">Before Lunch</option>
-                                <option value="After Lunch">After Lunch</option>
-                                <option value="Before Dinner">Before Dinner</option>
-                                <option value="After Dinner">After Dinner</option>
-                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="Actrapid" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('Actrapid')" title="Hide medicine">👁️</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="show-hidden-section" id="hiddenMedicinesInfo" style="display: none;">
-            <span id="hiddenCount">0</span> medicine(s) currently hidden.
-            <button onclick="showAllMedicines()">Show All</button>
-        </div>
-
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; margin-top: 16px;">
-            <button class="reset-btn" onclick="resetToday()">Reset Today's Tracking</button>
-            <button class="reset-btn" onclick="addMedicine()" style="background-color: var(--color-text-secondary);">Add New Medicine</button>
-            <button class="reset-btn" onclick="exportData()" style="background-color: #626c71;">Export Data</button>
-            <button class="reset-btn" onclick="document.getElementById('importFile').click()" style="background-color: #626c71;">Import Data</button>
-            <button class="reset-btn" onclick="printTracker()" style="background-color: #626c71;">Print/Save PDF</button>
-        </div>
-        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-
-        <div class="summary-section" id="summarySection">
-            <h2>Today's Summary</h2>
-            <div class="summary-grid" id="summaryGrid">
-                <!-- Summary will be populated here -->
-            </div>
-        </div>
+    <h1>💊 Medicine Tracker</h1>
+    <div class="controls">
+        <label>Date: <input type="date" id="date"></label>
+        <button class="add" id="addBtn">Add Medicine</button>
+        <button class="export" id="exportBtn">Export CSV</button>
+        <button class="clear" id="clearBtn">Clear All</button>
     </div>
-
+    <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Usage</th>
+                <th>Dosage</th>
+                <th>Unit</th>
+                <th>Time</th>
+                <th>When</th>
+                <th>Taken</th>
+                <th>Notes</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="list"></tbody>
+    </table>
     <script>
-        // Set today's date by default
-        const dateInput = document.getElementById('trackingDate');
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-
-        // Load medicines from localStorage if available
-        loadSavedMedicines();
-
-        // Load saved data for today
-        loadTracking(today);
-
-        // When date changes, load that date's data
-        dateInput.addEventListener('change', function() {
-            loadTracking(this.value);
-        });
-
-        // Handle checkbox changes
-        document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const medicine = this.dataset.medicine;
-                const select = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
+        let meds = JSON.parse(localStorage.getItem('meds') || '[]');
+        let date = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = date;
+        
+        function save() { localStorage.setItem('meds', JSON.stringify(meds)); }
+        
+        function parseTime(timeStr) {
+            // Parse time like "4pm", "12:30pm", "16:00" to minutes since midnight
+            if (!timeStr) return 0;
+            const lower = timeStr.toLowerCase().trim();
+            let hours = 0, minutes = 0;
+            
+            const match = lower.match(/(\d+):?(\d*)\s*(am|pm)?/);
+            if (match) {
+                hours = parseInt(match[1]);
+                minutes = match[2] ? parseInt(match[2]) : 0;
+                const meridiem = match[3];
                 
-                if (this.checked) {
-                    select.disabled = false;
+                if (meridiem === 'pm' && hours !== 12) hours += 12;
+                if (meridiem === 'am' && hours === 12) hours = 0;
+            }
+            
+            return hours * 60 + minutes;
+        }
+        
+        function getScheduleTime(when) {
+            // Return approximate time in minutes for standard schedules
+            const times = {
+                'Before Breakfast': 7 * 60,      // 7:00 AM
+                'After Breakfast': 9 * 60,       // 9:00 AM
+                'Before Lunch': 12 * 60,         // 12:00 PM
+                'After Lunch': 14 * 60,          // 2:00 PM
+                'Before Dinner': 19 * 60,        // 7:00 PM
+                'After Dinner': 21 * 60          // 9:00 PM
+            };
+            return times[when] || 0;
+        }
+        
+        function render() {
+            const tbody = document.getElementById('list');
+            tbody.innerHTML = '';
+            
+            // Create groups for medicines
+            const groups = [];
+            
+            meds.forEach(m => {
+                let groupName, sortTime;
+                
+                if (m.when === 'Custom...' && m.customWhen) {
+                    groupName = m.customWhen;
+                    sortTime = parseTime(m.customWhen);
                 } else {
-                    select.disabled = true;
-                    select.value = '';
+                    groupName = m.when;
+                    sortTime = getScheduleTime(m.when);
                 }
                 
-                saveTracking();
+                let group = groups.find(g => g.name === groupName);
+                if (!group) {
+                    group = { name: groupName, sortTime: sortTime, meds: [] };
+                    groups.push(group);
+                }
+                group.meds.push(m);
             });
-        });
-
-        // Handle timing selection changes
-        document.querySelectorAll('.timing-select').forEach(select => {
-            select.addEventListener('change', function() {
-                saveTracking();
-            });
-        });
-
-        // Handle notes input changes
-        document.querySelectorAll('.notes-input').forEach(input => {
-            input.addEventListener('input', function() {
-                saveTracking();
-            });
-        });
-
-        // Handle prescribed time changes
-        document.querySelectorAll('.prescribed-time').forEach(select => {
-            select.addEventListener('change', function() {
-                savePrescribedTimes();
-            });
-        });
-
-        // Load prescribed times on page load
-        loadPrescribedTimes();
-
-        function saveTracking() {
-            const date = dateInput.value;
-            const data = {};
             
-            document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-                const medicine = checkbox.dataset.medicine;
-                const select = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                const notes = document.querySelector(`.notes-input[data-medicine="${medicine}"]`);
+            // Sort groups by time
+            groups.sort((a, b) => a.sortTime - b.sortTime);
+            
+            // Render each group
+            groups.forEach(group => {
+                // Add schedule header
+                const headerRow = tbody.insertRow();
+                headerRow.className = 'schedule-header';
+                headerRow.innerHTML = `<td colspan="9">${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})</td>`;
                 
-                data[medicine] = {
-                    taken: checkbox.checked,
-                    timing: select.value,
-                    notes: notes ? notes.value : ''
-                };
-            });
-            
-            // Store in localStorage for persistence
-            try {
-                let allData = JSON.parse(localStorage.getItem('medicineData')) || {};
-                allData[date] = data;
-                localStorage.setItem('medicineData', JSON.stringify(allData));
-            } catch (e) {
-                console.error('Error saving to localStorage:', e);
-            }
-        }
-
-        function savePrescribedTimes() {
-            const prescribedTimes = {};
-            document.querySelectorAll('.prescribed-time').forEach(select => {
-                const medicine = select.dataset.medicine;
-                prescribedTimes[medicine] = select.value;
-            });
-            try {
-                localStorage.setItem('prescribedTimes', JSON.stringify(prescribedTimes));
-            } catch (e) {
-                console.error('Error saving prescribed times:', e);
-            }
-        }
-
-        function loadPrescribedTimes() {
-            try {
-                const prescribedTimes = JSON.parse(localStorage.getItem('prescribedTimes')) || {};
-                document.querySelectorAll('.prescribed-time').forEach(select => {
-                    const medicine = select.dataset.medicine;
-                    if (prescribedTimes[medicine]) {
-                        select.value = prescribedTimes[medicine];
+                // Add medicines for this group
+                group.meds.forEach(m => {
+                    const i = meds.indexOf(m);
+                    const row = tbody.insertRow();
+                    if (m.taken[date]) {
+                        row.className = 'taken-row';
                     }
+                    row.innerHTML = `
+                        <td><input value="${m.name}" data-i="${i}" data-f="name"></td>
+                        <td><input value="${m.usage}" data-i="${i}" data-f="usage"></td>
+                        <td><input type="number" value="${m.dosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
+                        <td><select data-i="${i}" data-f="unit">
+                            <option ${m.unit=='tablets'?'selected':''}>tablets</option>
+                            <option ${m.unit=='ml'?'selected':''}>ml</option>
+                            <option ${m.unit=='mg'?'selected':''}>mg</option>
+                            <option ${m.unit=='drops'?'selected':''}>drops</option>
+                            <option ${m.unit=='Packet'?'selected':''}>Packet</option>
+                            <option ${m.unit=='Capsules'?'selected':''}>Capsules</option>
+                            <option ${m.unit=='Teaspoons'?'selected':''}>Teaspoons</option>
+                            <option ${m.unit=='Custom'?'selected':''}>Custom...</option>
+                        </select></td>
+                        <td><input value="${m.time}" data-i="${i}" data-f="time" placeholder="Morning"></td>
+                        <td><select data-i="${i}" data-f="when">
+                            <option ${m.when=='Before Breakfast'?'selected':''}>Before Breakfast</option>
+                            <option ${m.when=='After Breakfast'?'selected':''}>After Breakfast</option>
+                            <option ${m.when=='Before Lunch'?'selected':''}>Before Lunch</option>
+                            <option ${m.when=='After Lunch'?'selected':''}>After Lunch</option>
+                            <option ${m.when=='Before Dinner'?'selected':''}>Before Dinner</option>
+                            <option ${m.when=='After Dinner'?'selected':''}>After Dinner</option>
+                            <option ${m.when=='Custom...'?'selected':''}>Custom...</option>
+                        </select>
+                        ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}</td>
+                        <td><input type="checkbox" ${m.taken[date]?'checked':''} data-i="${i}" data-f="taken"></td>
+                        <td><textarea data-i="${i}" data-f="notes">${m.notes||''}</textarea></td>
+                        <td><button class="del" data-i="${i}">X</button></td>
+                    `;
                 });
-            } catch (e) {
-                console.error('Error loading prescribed times:', e);
-            }
-        }
-
-        function loadTracking(date) {
-            // Load from localStorage
-            let allData = {};
-            try {
-                allData = JSON.parse(localStorage.getItem('medicineData')) || {};
-            } catch (e) {
-                console.error('Error loading from localStorage:', e);
-            }
-            const data = allData[date] || {};
-            
-            document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-                const medicine = checkbox.dataset.medicine;
-                const select = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                const notes = document.querySelector(`.notes-input[data-medicine="${medicine}"]`);
-                
-                if (data[medicine]) {
-                    checkbox.checked = data[medicine].taken;
-                    select.value = data[medicine].timing;
-                    select.disabled = !data[medicine].taken;
-                    if (notes) notes.value = data[medicine].notes || '';
-                } else {
-                    checkbox.checked = false;
-                    select.value = '';
-                    select.disabled = true;
-                    if (notes) notes.value = '';
-                }
             });
+            updateSummary();
         }
-
-        function resetToday() {
-            if (confirm('Are you sure you want to reset today\'s tracking?')) {
-                document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-                    checkbox.checked = false;
-                    const medicine = checkbox.dataset.medicine;
-                    const select = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                    select.value = '';
-                    select.disabled = true;
-                });
-                saveTracking();
-                updateSummary();
-            }
-        }
-
+        
         function updateSummary() {
-            const summaryGrid = document.getElementById('summaryGrid');
-            const timings = {
-                'Before Breakfast': 0,
-                'After Breakfast': 0,
-                'Before Lunch': 0,
-                'After Lunch': 0,
-                'Before Dinner': 0,
-                'After Dinner': 0,
-                'Bedtime': 0
-            };
-            
-            let totalTaken = 0;
-            
-            document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-                if (checkbox.checked) {
-                    totalTaken++;
-                    const medicine = checkbox.dataset.medicine;
-                    const select = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                    const timing = select.value;
-                    if (timing && timings.hasOwnProperty(timing)) {
-                        timings[timing]++;
+            const total = meds.length;
+            const taken = meds.filter(m => m.taken[date]).length;
+            const pct = total ? Math.round(taken/total*100) : 0;
+            document.getElementById('summary').innerHTML = `Total: ${total} | Taken: ${taken} | Completion: ${pct}%`;
+        }
+        
+        document.getElementById('list').addEventListener('change', e => {
+            const i = e.target.dataset.i;
+            const f = e.target.dataset.f;
+            if (i !== undefined && f) {
+                if (f === 'taken') {
+                    meds[i].taken[date] = e.target.checked;
+                    // Update row styling when taken status changes
+                    const row = e.target.closest('tr');
+                    if (e.target.checked) {
+                        row.className = 'taken-row';
+                    } else {
+                        row.className = '';
                     }
-                }
-            });
-            
-            const totalMedicines = document.querySelectorAll('.taken-checkbox').length;
-            
-            let summaryHTML = `
-                <div class="summary-item">
-                    <div class="label">Total Medicines</div>
-                    <div class="count">${totalMedicines}</div>
-                </div>
-                <div class="summary-item">
-                    <div class="label">Taken Today</div>
-                    <div class="count">${totalTaken}</div>
-                </div>
-            `;
-            
-            for (const [timing, count] of Object.entries(timings)) {
-                if (count > 0) {
-                    summaryHTML += `
-                        <div class="summary-item">
-                            <div class="label">${timing}</div>
-                            <div class="count">${count}</div>
-                        </div>
-                    `;
-                }
-            }
-            
-            summaryGrid.innerHTML = summaryHTML;
-        }
-
-        function addMedicine() {
-            const modal = document.createElement('div');
-            modal.className = 'modal active';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h2>Add New Medicine</h2>
-                    <div class="form-group">
-                        <label for="medicineName">Medicine Name</label>
-                        <input type="text" id="medicineName" placeholder="Enter medicine name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="medicineUse">Use/Indication</label>
-                        <textarea id="medicineUse" placeholder="Enter use/indication"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="medicineReason">Reason</label>
-                        <textarea id="medicineReason" placeholder="Enter reason"></textarea>
-                    </div>
-                    <div class="modal-buttons">
-                        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-                        <button class="reset-btn" onclick="saveMedicine()">Add Medicine</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        function closeModal() {
-            const modal = document.querySelector('.modal');
-            if (modal) {
-                modal.remove();
-            }
-        }
-
-        function saveMedicine() {
-            const name = document.getElementById('medicineName').value.trim();
-            const use = document.getElementById('medicineUse').value.trim();
-            const reason = document.getElementById('medicineReason').value.trim();
-            
-            if (!name) {
-                alert('Please enter medicine name');
-                return;
-            }
-            
-            const tbody = document.querySelector('#medicineTable tbody');
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td class="medicine-name">${name}</td>
-                <td>${use}</td>
-                <td>${reason}</td>
-                <td class="checkbox-cell">
-                    <input type="checkbox" class="taken-checkbox" data-medicine="${name}">
-                </td>
-                <td>
-                    <select class="prescribed-time" data-medicine="${name}">
-                        <option value="">Not set</option>
-                        <option value="Before Breakfast">Before Breakfast</option>
-                        <option value="After Breakfast">After Breakfast</option>
-                        <option value="Before Lunch">Before Lunch</option>
-                        <option value="After Lunch">After Lunch</option>
-                        <option value="Before Dinner">Before Dinner</option>
-                        <option value="After Dinner">After Dinner</option>
-                        <option value="Bedtime">Bedtime</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="timing-select" disabled data-medicine="${name}">
-                        <option value="">Select timing</option>
-                        <option value="Before Breakfast">Before Breakfast</option>
-                        <option value="After Breakfast">After Breakfast</option>
-                        <option value="Before Lunch">Before Lunch</option>
-                        <option value="After Lunch">After Lunch</option>
-                        <option value="Before Dinner">Before Dinner</option>
-                        <option value="After Dinner">After Dinner</option>
-                        <option value="Bedtime">Bedtime</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="text" class="notes-input" data-medicine="${name}" placeholder="Add notes...">
-                </td>
-                <td>
-                    <button class="hide-btn" onclick="toggleMedicineVisibility('${name}')" title="Hide medicine">👁️</button>
-                </td>
-            `;
-            
-            tbody.appendChild(newRow);
-            
-            // Save medicine list to localStorage
-            saveMedicineList();
-            
-            // Attach event listeners to new elements
-            const checkbox = newRow.querySelector('.taken-checkbox');
-            const select = newRow.querySelector('.timing-select');
-            
-            checkbox.addEventListener('change', function() {
-                const medicine = this.dataset.medicine;
-                const selectElem = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                
-                if (this.checked) {
-                    selectElem.disabled = false;
                 } else {
-                    selectElem.disabled = true;
-                    selectElem.value = '';
-                }
-                
-                saveTracking();
-                updateSummary();
-            });
-            
-            select.addEventListener('change', function() {
-                saveTracking();
-                updateSummary();
-            });
-
-            const notesInput = newRow.querySelector('.notes-input');
-            notesInput.addEventListener('input', function() {
-                saveTracking();
-            });
-
-            const prescribedTimeSelect = newRow.querySelector('.prescribed-time');
-            prescribedTimeSelect.addEventListener('change', function() {
-                savePrescribedTimes();
-            });
-            
-            closeModal();
-            updateSummary();
-        }
-
-        // Save medicine list to localStorage
-        function saveMedicineList() {
-            const medicines = [];
-            document.querySelectorAll('#medicineTable tbody tr').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const prescribedTime = row.querySelector('.prescribed-time');
-                medicines.push({
-                    name: cells[0].textContent,
-                    use: cells[1].textContent,
-                    reason: cells[2].textContent,
-                    prescribedTime: prescribedTime ? prescribedTime.value : ''
-                });
-            });
-            try {
-                localStorage.setItem('medicineList', JSON.stringify(medicines));
-            } catch (e) {
-                console.error('Error saving medicine list:', e);
-            }
-        }
-
-        // Load medicines from localStorage on page load
-        function loadSavedMedicines() {
-            try {
-                const savedMedicines = localStorage.getItem('medicineList');
-                if (savedMedicines) {
-                    const medicines = JSON.parse(savedMedicines);
-                    const tbody = document.querySelector('#medicineTable tbody');
-                    
-                    // Only load if different from default
-                    if (medicines.length !== 8 || medicines[0].name !== 'Dytor Plus 20') {
-                        tbody.innerHTML = '';
-                        
-                        medicines.forEach(med => {
-                            const newRow = document.createElement('tr');
-                            newRow.innerHTML = `
-                                <td class="medicine-name">${med.name}</td>
-                                <td>${med.use}</td>
-                                <td>${med.reason}</td>
-                                <td>
-                                    <select class="prescribed-time" data-medicine="${med.name}">
-                                        <option value="">Not set</option>
-                                        <option value="Before Breakfast" ${med.prescribedTime === 'Before Breakfast' ? 'selected' : ''}>Before Breakfast</option>
-                                        <option value="After Breakfast" ${med.prescribedTime === 'After Breakfast' ? 'selected' : ''}>After Breakfast</option>
-                                        <option value="Before Lunch" ${med.prescribedTime === 'Before Lunch' ? 'selected' : ''}>Before Lunch</option>
-                                        <option value="After Lunch" ${med.prescribedTime === 'After Lunch' ? 'selected' : ''}>After Lunch</option>
-                                        <option value="Before Dinner" ${med.prescribedTime === 'Before Dinner' ? 'selected' : ''}>Before Dinner</option>
-                                        <option value="After Dinner" ${med.prescribedTime === 'After Dinner' ? 'selected' : ''}>After Dinner</option>
-                                        <option value="Bedtime" ${med.prescribedTime === 'Bedtime' ? 'selected' : ''}>Bedtime</option>
-                                    </select>
-                                </td>
-                                <td class="checkbox-cell">
-                                    <input type="checkbox" class="taken-checkbox" data-medicine="${med.name}">
-                                </td>
-                                <td>
-                                    <select class="timing-select" disabled data-medicine="${med.name}">
-                                        <option value="">Select timing</option>
-                                        <option value="Before Breakfast">Before Breakfast</option>
-                                        <option value="After Breakfast">After Breakfast</option>
-                                        <option value="Before Lunch">Before Lunch</option>
-                                        <option value="After Lunch">After Lunch</option>
-                                        <option value="Before Dinner">Before Dinner</option>
-                                        <option value="After Dinner">After Dinner</option>
-                                        <option value="Bedtime">Bedtime</option>
-                                    </select>
-                                </td>                        <td>
-                            <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('${med.name}')" title="Hide medicine">👁️</button>
-                        </td>
-                    `;
-                    tbody.appendChild(newRow);
-                            
-                            // Attach event listeners
-                            const checkbox = newRow.querySelector('.taken-checkbox');
-                            const select = newRow.querySelector('.timing-select');
-                            const notesInput = newRow.querySelector('.notes-input');
-                            
-                            checkbox.addEventListener('change', function() {
-                                const medicine = this.dataset.medicine;
-                                const selectElem = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                                if (this.checked) {
-                                    selectElem.disabled = false;
-                                } else {
-                                    selectElem.disabled = true;
-                                    selectElem.value = '';
-                                }
-                                saveTracking();
-                                updateSummary();
-                            });
-                            
-                            select.addEventListener('change', function() {
-                                saveTracking();
-                                updateSummary();
-                            });
-                            
-                            notesInput.addEventListener('input', function() {
-                                saveTracking();
-                            });
-
-                            const prescribedTimeSelect = newRow.querySelector('.prescribed-time');
-                            prescribedTimeSelect.addEventListener('change', function() {
-                                savePrescribedTimes();
-                            });
-                        });
-
-                        loadPrescribedTimes();
+                    meds[i][f] = e.target.value;
+                    // If schedule changed, re-render to group properly
+                    if (f === 'when') {
+                        render();
+                        return;
                     }
                 }
-            } catch (e) {
-                console.error('Error loading saved medicines:', e);
-            }
-        }
-
-        // Update summary when checkboxes or selects change
-        document.querySelectorAll('.taken-checkbox').forEach(checkbox => {
-            const originalListener = checkbox.onchange;
-            checkbox.addEventListener('change', function() {
+                save();
                 updateSummary();
-            });
+            }
         });
-
-        document.querySelectorAll('.timing-select').forEach(select => {
-            const originalListener = select.onchange;
-            select.addEventListener('change', function() {
-                updateSummary();
-            });
+        
+        document.getElementById('list').addEventListener('click', e => {
+            if (e.target.classList.contains('del')) {
+                const i = e.target.dataset.i;
+                if (confirm('Delete?')) {
+                    meds.splice(i, 1);
+                    save();
+                    render();
+                }
+            }
         });
-
-        // Initialize summary on page load
-        updateSummary();
-
-        // Toggle medicine visibility
-        function toggleMedicineVisibility(medicineName) {
-            const rows = document.querySelectorAll('#medicineTable tbody tr');
-            let targetRow = null;
-            
-            rows.forEach(row => {
-                const nameCell = row.querySelector('.medicine-name');
-                if (nameCell && nameCell.textContent === medicineName) {
-                    targetRow = row;
-                }
-            });
-            
-            if (targetRow) {
-                targetRow.classList.toggle('hidden-medicine');
-                saveHiddenMedicines();
-                updateHiddenCount();
-                updateSummary();
+        
+        document.getElementById('addBtn').addEventListener('click', () => {
+            meds.push({ name:'', usage:'', dosage:'', unit:'tablets', time:'', when:'After Breakfast', customWhen:'', taken:{}, notes:'' });
+            save();
+            render();
+        });
+        
+        document.getElementById('date').addEventListener('change', e => {
+            date = e.target.value;
+            render();
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear all?')) {
+                meds = [];
+                save();
+                render();
             }
-        }
-
-        // Save hidden medicines to localStorage
-        function saveHiddenMedicines() {
-            const hiddenMedicines = [];
-            document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').forEach(row => {
-                const nameCell = row.querySelector('.medicine-name');
-                if (nameCell) {
-                    hiddenMedicines.push(nameCell.textContent);
-                }
+        });
+        
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
+            meds.forEach(m => {
+                csv += `"${m.name}","${m.usage}","${m.dosage}","${m.unit}","${m.time}","${m.when}","${m.taken[date]?'Yes':'No'}","${m.notes||''}"\n`;
             });
-            try {
-                localStorage.setItem('hiddenMedicines', JSON.stringify(hiddenMedicines));
-            } catch (e) {
-                console.error('Error saving hidden medicines:', e);
-            }
-        }
-
-        // Load hidden medicines from localStorage
-        function loadHiddenMedicines() {
-            try {
-                const hiddenMedicines = JSON.parse(localStorage.getItem('hiddenMedicines')) || [];
-                hiddenMedicines.forEach(medicineName => {
-                    const rows = document.querySelectorAll('#medicineTable tbody tr');
-                    rows.forEach(row => {
-                        const nameCell = row.querySelector('.medicine-name');
-                        if (nameCell && nameCell.textContent === medicineName) {
-                            row.classList.add('hidden-medicine');
-                        }
-                    });
-                });
-                updateHiddenCount();
-            } catch (e) {
-                console.error('Error loading hidden medicines:', e);
-            }
-        }
-
-        // Update hidden medicines count
-        function updateHiddenCount() {
-            const hiddenCount = document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').length;
-            const hiddenInfo = document.getElementById('hiddenMedicinesInfo');
-            const countSpan = document.getElementById('hiddenCount');
-            
-            if (hiddenCount > 0) {
-                hiddenInfo.style.display = 'block';
-                countSpan.textContent = hiddenCount;
-            } else {
-                hiddenInfo.style.display = 'none';
-            }
-        }
-
-        // Show all hidden medicines
-        function showAllMedicines() {
-            document.querySelectorAll('#medicineTable tbody tr.hidden-medicine').forEach(row => {
-                row.classList.remove('hidden-medicine');
-            });
-            saveHiddenMedicines();
-            updateHiddenCount();
-            updateSummary();
-        }
-
-        // Load hidden medicines on page load
-        loadHiddenMedicines();
-
-        // Export data as JSON file
-        function exportData() {
-            let trackingData = {};
-            try {
-                trackingData = JSON.parse(localStorage.getItem('medicineData')) || {};
-            } catch (e) {
-                console.error('Error loading data for export:', e);
-            }
-            
-            let prescribedTimes = {};
-            try {
-                prescribedTimes = JSON.parse(localStorage.getItem('prescribedTimes')) || {};
-            } catch (e) {
-                console.error('Error loading prescribed times for export:', e);
-            }
-
-            const exportObj = {
-                medicines: [],
-                trackingData: trackingData,
-                prescribedTimes: prescribedTimes
-            };
-            
-            // Get all medicines from table
-            document.querySelectorAll('#medicineTable tbody tr').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                exportObj.medicines.push({
-                    name: cells[0].textContent,
-                    use: cells[1].textContent,
-                    reason: cells[2].textContent
-                });
-            });
-            
-            const dataStr = JSON.stringify(exportObj, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `medicine-tracker-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // Import data from JSON file
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    // Restore tracking data to localStorage
-                    try {
-                        localStorage.setItem('medicineData', JSON.stringify(data.trackingData || {}));
-                        localStorage.setItem('prescribedTimes', JSON.stringify(data.prescribedTimes || {}));
-                    } catch (err) {
-                        console.error('Error saving imported data:', err);
-                    }
-                    
-                    // Clear existing medicines (except default ones)
-                    const tbody = document.querySelector('#medicineTable tbody');
-                    tbody.innerHTML = '';
-                    
-                    // Rebuild table with imported medicines
-                    data.medicines.forEach(med => {
-                        const newRow = document.createElement('tr');
-                        newRow.innerHTML = `
-                            <td class="medicine-name">${med.name}</td>
-                            <td>${med.use}</td>
-                            <td>${med.reason}</td>
-                            <td>
-                                <select class="prescribed-time" data-medicine="${med.name}">
-                                    <option value="">Not set</option>
-                                    <option value="Before Breakfast">Before Breakfast</option>
-                                    <option value="After Breakfast">After Breakfast</option>
-                                    <option value="Before Lunch">Before Lunch</option>
-                                    <option value="After Lunch">After Lunch</option>
-                                    <option value="Before Dinner">Before Dinner</option>
-                                    <option value="After Dinner">After Dinner</option>
-                                    <option value="Bedtime">Bedtime</option>
-                                </select>
-                            </td>
-                            <td class="checkbox-cell">
-                                <input type="checkbox" class="taken-checkbox" data-medicine="${med.name}">
-                            </td>
-                            <td>
-                                <select class="timing-select" disabled data-medicine="${med.name}">
-                                    <option value="">Select timing</option>
-                                    <option value="Before Breakfast">Before Breakfast</option>
-                                    <option value="After Breakfast">After Breakfast</option>
-                                    <option value="Before Lunch">Before Lunch</option>
-                                    <option value="After Lunch">After Lunch</option>
-                                    <option value="Before Dinner">Before Dinner</option>
-                                    <option value="After Dinner">After Dinner</option>                                <option value="Bedtime">Bedtime</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" class="notes-input" data-medicine="${med.name}" placeholder="Add notes...">
-                        </td>
-                        <td>
-                            <button class="hide-btn" onclick="toggleMedicineVisibility('${med.name}')" title="Hide medicine">👁️</button>
-                        </td>
-                    `;
-                    tbody.appendChild(newRow);
-                        
-                        // Attach event listeners
-                        const checkbox = newRow.querySelector('.taken-checkbox');
-                        const select = newRow.querySelector('.timing-select');
-                        
-                        checkbox.addEventListener('change', function() {
-                            const medicine = this.dataset.medicine;
-                            const selectElem = document.querySelector(`.timing-select[data-medicine="${medicine}"]`);
-                            if (this.checked) {
-                                selectElem.disabled = false;
-                            } else {
-                                selectElem.disabled = true;
-                                selectElem.value = '';
-                            }
-                            saveTracking();
-                            updateSummary();
-                        });
-                        
-                        select.addEventListener('change', function() {
-                            saveTracking();
-                            updateSummary();
-                        });
-
-                        const notesInput = newRow.querySelector('.notes-input');
-                        notesInput.addEventListener('input', function() {
-                            saveTracking();
-                        });
-
-                        const prescribedTimeSelect = newRow.querySelector('.prescribed-time');
-                        prescribedTimeSelect.addEventListener('change', function() {
-                            savePrescribedTimes();
-                        });
-                    });
-                    
-                    // Load today's tracking
-                    loadTracking(dateInput.value);
-                    loadPrescribedTimes();
-                    updateSummary();
-                    alert('Data imported successfully!');
-                } catch (error) {
-                    alert('Error importing data. Please check the file format.');
-                    console.error(error);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Print-friendly view
-        function printTracker() {
-            const printWindow = window.open('', '', 'width=800,height=600');
-            const date = dateInput.value;
-            const formattedDate = new Date(date).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            let tableRows = '';
-            document.querySelectorAll('#medicineTable tbody tr').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const checkbox = row.querySelector('.taken-checkbox');
-                const select = row.querySelector('.timing-select');
-                const notesInput = row.querySelector('.notes-input');
-                const prescribedTimeSelect = row.querySelector('.prescribed-time');
-                const taken = checkbox.checked ? '✓' : '☐';
-                const timing = select.value || '________';
-                const notes = notesInput ? notesInput.value : '';
-                const prescribedTime = prescribedTimeSelect ? prescribedTimeSelect.value || 'Not set' : 'Not set';
-                
-                tableRows += `
-                    <tr>
-                        <td>${cells[0].textContent}</td>
-                        <td>${cells[1].textContent}</td>
-                        <td>${cells[2].textContent}</td>
-                        <td>${prescribedTime}</td>
-                        <td style="text-align: center;">${taken}</td>
-                        <td>${timing}</td>
-                        <td>${notes}</td>
-                    </tr>
-                `;
-            });
-            
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Medicine Tracker - ${formattedDate}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h1 { font-size: 24px; margin-bottom: 10px; }
-                        .date { font-size: 14px; color: #666; margin-bottom: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 12px; }
-                        th { background-color: #f5f5f5; font-weight: bold; }
-                        .medicine-name { font-weight: bold; }
-                        .footer { margin-top: 30px; font-size: 12px; color: #666; }
-                        @media print {
-                            button { display: none; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Daily Medicine Tracker</h1>
-                    <div class="date">${formattedDate}</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Medicine</th>
-                                <th>Use/Indication</th>                        <th>Reason</th>
-                        <th>Taken</th>
-                        <th>When</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tableRows}
-                        </tbody>
-                    </table>
-                    <div class="footer">
-                        <p><strong>Notes:</strong></p>
-                        <p>_________________________________________________________________</p>
-                        <p>_________________________________________________________________</p>
-                        <p>_________________________________________________________________</p>
-                    </div>
-                    <button onclick="window.print()" style="padding: 10px 20px; background: #21808d; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 20px;">Print / Save as PDF</button>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        }
+            const blob = new Blob([csv], {type:'text/csv'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `meds-${date}.csv`;
+            a.click();
+        });
+        
+        render();
     </script>
 </body>
 </html>
