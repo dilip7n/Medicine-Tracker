@@ -71,7 +71,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        window.meds = [];
+        if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = date;
@@ -118,7 +118,8 @@
             get(ref(db, 'medicines'))
                 .then((snapshot) => {
                     if (snapshot.exists()) {
-                        meds = snapshot.val() || [];
+                        window.meds = snapshot.val() || [];
+                        meds = window.meds;
                         statusEl.textContent = `✅ Loaded ${meds.length} medicines from Firebase`;
                         statusEl.style.color = 'green';
                         setTimeout(() => statusEl.textContent = '', 2000);
@@ -143,7 +144,8 @@
                     // Fallback to localStorage
                     const localData = localStorage.getItem('medicines');
                     if (localData) {
-                        meds = JSON.parse(localData);
+                        window.meds = JSON.parse(localData);
+                        meds = window.meds;
                         statusEl.textContent = `📱 Loaded ${meds.length} medicines from local backup`;
                         setTimeout(() => statusEl.textContent = '', 3000);
                     } else {
@@ -161,7 +163,8 @@
                     const oldMeds = JSON.parse(localData);
                     if (oldMeds && oldMeds.length > 0 && meds.length === 0) {
                         console.log('Migrating', oldMeds.length, 'medicines from localStorage to Firebase...');
-                        meds = oldMeds;
+                        window.meds = oldMeds;
+                        meds = window.meds;
                         save(); // Save to Firebase
                         localStorage.removeItem('medicines'); // Clear localStorage after successful migration
                         const statusEl = document.getElementById('status') || createStatusElement();
@@ -341,7 +344,8 @@
         
         document.getElementById('clearBtn').addEventListener('click', () => {
             if (confirm('Clear all?')) {
-                meds = [];
+                window.meds = [];
+                meds = window.meds;
                 save();
                 render();
             }
