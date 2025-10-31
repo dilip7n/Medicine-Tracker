@@ -20,6 +20,8 @@
         td { vertical-align: top; }
         input[data-f="usage"], input[data-f="when"] { min-height: 50px; }
         .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .duplicate { background: #9C27B0; color: white; border: none; padding: 5px 10px; cursor: pointer; }
+        .undo-redo { background: #607D8B; color: white; border: none; padding: 8px 15px; margin: 5px; cursor: pointer; }
         .taken-row { background-color: #f0f0f0; opacity: 0.7; }
         .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
         .missed-row { background-color: #ffebee; opacity: 0.8; border-left: 4px solid #f44336; }
@@ -49,8 +51,11 @@
             <label>Date: <input type="date" id="date"></label>
             <button class="add" id="addBtn">Add Medicine</button>
             <button class="export" id="exportBtn">Export CSV</button>
-            <button class="clear" id="clearBtn">Clear All</button>
+            <button class="clear" id="clearBtn">Clear Today</button>
+            <button class="undo-redo" id="undoBtn">↶ Undo</button>
+            <button class="undo-redo" id="redoBtn">↷ Redo</button>
             <button class="export" onclick="save(); alert('Data saved to Firebase!')">🔥 Force Save</button>
+            <button class="export" onclick="load(); alert('Syncing with Firebase...')">🔄 Force Sync</button>
         </div>
     </div>
     <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
@@ -65,7 +70,7 @@
                 <th>When</th>
                 <th>Taken</th>
                 <th>Notes</th>
-                <th>Delete</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="list"></tbody>
@@ -79,7 +84,7 @@
         window.logout = logout;
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
-        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
         
         // Firebase configuration
@@ -170,6 +175,37 @@
             load(); // Load medicines after login
         }
         
+        // Setup real-time sync listener
+        let syncListener = null;
+        
+        function setupRealtimeSync() {
+            if (!currentUser || syncListener) return;
+            
+            const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
+            syncListener = onValue(medsRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const newData = snapshot.val() || [];
+                    // Only update if data is different to avoid render loops
+                    if (JSON.stringify(newData) !== JSON.stringify(meds)) {
+                        window.meds = newData;
+                        meds = window.meds;
+                        render();
+                        
+                        const statusEl = document.getElementById('status') || createStatusElement();
+                        statusEl.textContent = '🔄 Synced from another device';
+                        statusEl.style.color = 'blue';
+                        setTimeout(() => statusEl.textContent = '', 2000);
+                    }
+                }
+            }, (error) => {
+                console.error('Real-time sync error:', error);
+            });
+        }
+        
+        function disableRealtimeSync() {
+            syncListener = null;
+        }
+        
         // Check authentication state on load
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -177,6 +213,7 @@
                 showApp();
             } else {
                 currentUser = null;
+                disableRealtimeSync();
                 showLogin();
             }
         });
@@ -184,6 +221,47 @@
         if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
+        
+        // Undo/Redo functionality
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_UNDO = 20;
+        
+        function saveState() {
+            undoStack.push(JSON.stringify(meds));
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+            redoStack = []; // Clear redo when new action happens
+            updateUndoRedoButtons();
+        }
+        
+        function undo() {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.stringify(meds));
+            const prevState = undoStack.pop();
+            window.meds = JSON.parse(prevState);
+            meds = window.meds;
+            save();
+            render();
+            updateUndoRedoButtons();
+        }
+        
+        function redo() {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.stringify(meds));
+            const nextState = redoStack.pop();
+            window.meds = JSON.parse(nextState);
+            meds = window.meds;
+            save();
+            render();
+            updateUndoRedoButtons();
+        }
+        
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+            if (redoBtn) redoBtn.disabled = redoStack.length === 0;
+        }
         document.getElementById('date').value = date;
         
         function save() {
@@ -254,6 +332,9 @@
                         }
                     }
                     render();
+                    
+                    // Enable real-time sync
+                    setupRealtimeSync();
                 })
                 .catch((error) => {
                     console.error('Firebase load error:', error);
@@ -408,7 +489,10 @@
                             </div>
                         </td>
                         <td><textarea data-i="${i}" data-f="notes">${m.notes||''}</textarea></td>
-                        <td><button class="del" data-i="${i}">X</button></td>
+                        <td>
+                            <button class="duplicate" data-i="${i}">Copy</button>
+                            <button class="del" data-i="${i}">X</button>
+                        </td>
                     `;
                 });
             });
@@ -434,6 +518,7 @@
             const i = e.target.dataset.i;
             const f = e.target.dataset.f;
             if (i !== undefined && f) {
+                saveState(); // Save state before change
                 if (f === 'taken') {
                     meds[i].taken[date] = e.target.checked;
                     // Update row styling when taken status changes
@@ -460,10 +545,19 @@
             if (e.target.classList.contains('del')) {
                 const i = e.target.dataset.i;
                 if (confirm('Delete?')) {
+                    saveState();
                     meds.splice(i, 1);
                     save();
                     render();
                 }
+            } else if (e.target.classList.contains('duplicate')) {
+                const i = e.target.dataset.i;
+                saveState();
+                const duplicate = JSON.parse(JSON.stringify(meds[i]));
+                duplicate.name += ' (Copy)';
+                meds.splice(parseInt(i) + 1, 0, duplicate);
+                save();
+                render();
             } else if (e.target.classList.contains('missed-btn')) {
                 const i = e.target.dataset.i;
                 const currentStatus = meds[i].taken[date];
@@ -485,10 +579,14 @@
         });
         
         document.getElementById('addBtn').addEventListener('click', () => {
+            saveState();
             meds.push({ name:'', usage:'', dosage:'', unit:'tablets', time:'', when:'After Breakfast', customWhen:'', taken:{}, notes:'' });
             save();
             render();
         });
+        
+        document.getElementById('undoBtn').addEventListener('click', undo);
+        document.getElementById('redoBtn').addEventListener('click', redo);
         
         document.getElementById('date').addEventListener('change', e => {
             date = e.target.value;
@@ -496,9 +594,11 @@
         });
         
         document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm('Clear all?')) {
-                window.meds = [];
-                meds = window.meds;
+            if (confirm(`Clear all taken/missed status for ${date}?`)) {
+                saveState();
+                meds.forEach(m => {
+                    delete m.taken[date];
+                });
                 save();
                 render();
             }
