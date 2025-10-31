@@ -72,8 +72,28 @@
                 })
                 .catch(err => {
                     console.error('Load error:', err);
+                    // Try to migrate from localStorage if available
+                    migrateFromLocalStorage();
                     render();
                 });
+        }
+        
+        function migrateFromLocalStorage() {
+            try {
+                const localData = localStorage.getItem('medicines');
+                if (localData) {
+                    const oldMeds = JSON.parse(localData);
+                    if (oldMeds && oldMeds.length > 0 && meds.length === 0) {
+                        console.log('Migrating', oldMeds.length, 'medicines from localStorage to Google Sheets...');
+                        meds = oldMeds;
+                        save(); // Save to Google Sheets
+                        localStorage.removeItem('medicines'); // Clear localStorage
+                        alert(`✅ Successfully migrated ${oldMeds.length} medicines to Google Sheets!\n\nYour data is now synced across all devices.`);
+                    }
+                }
+            } catch (err) {
+                console.error('Migration error:', err);
+            }
         }
         
         function parseTime(timeStr) {
