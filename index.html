@@ -15,8 +15,10 @@
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
         th, td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
         th { background: #f0f0f0; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 5px; box-sizing: border-box; word-wrap: break-word; white-space: normal; overflow-wrap: break-word; }
-        td { word-wrap: break-word; white-space: normal; overflow-wrap: break-word; max-width: 200px; }
+        input, select { width: 100%; padding: 5px; box-sizing: border-box; min-height: 30px; }
+        textarea { width: 100%; padding: 5px; box-sizing: border-box; min-height: 60px; resize: vertical; }
+        td { vertical-align: top; }
+        input[data-f="usage"], input[data-f="when"] { min-height: 50px; }
         .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
         .taken-row { background-color: #f0f0f0; opacity: 0.7; }
         .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
@@ -220,7 +222,7 @@
                     }
                     row.innerHTML = `
                         <td><input value="${m.name}" data-i="${i}" data-f="name"></td>
-                        <td><input value="${m.usage}" data-i="${i}" data-f="usage"></td>
+                        <td><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${m.usage}</textarea></td>
                         <td><input type="number" value="${m.dosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
                         <td><select data-i="${i}" data-f="unit">
                             <option ${m.unit=='tablets'?'selected':''}>tablets</option>
