@@ -51,9 +51,11 @@
         </thead>
         <tbody id="list"></tbody>
     </table>
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js"></script>
-    <script>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
+        import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4",
@@ -66,12 +68,11 @@
         };
         
         // Initialize Firebase
-        const { initializeApp } = window.Firebase;
-        const { getDatabase, ref, set, get } = window.Firebase.Database;
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        let meds = [];
+        window.meds = [];
+        let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = date;
         
@@ -358,7 +359,7 @@
             a.click();
         });
         
-        load(); // Load from Google Sheets on startup
+        load(); // Load from Firebase on startup
     </script>
 </body>
 </html>
