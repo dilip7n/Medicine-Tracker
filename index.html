@@ -5,28 +5,208 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medicine Tracker</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
-        h1 { color: #333; }
-        .controls { margin: 20px 0; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; font-size: 14px; }
-        .add { background: #4CAF50; color: white; border: none; }
-        .export { background: #2196F3; color: white; border: none; }
-        .clear { background: #f44336; color: white; border: none; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
-        th { background: #f0f0f0; font-weight: bold; }
-        input, select { width: 100%; padding: 5px; box-sizing: border-box; min-height: 30px; }
-        textarea { width: 100%; padding: 5px; box-sizing: border-box; min-height: 60px; resize: vertical; }
-        td { vertical-align: top; }
-        input[data-f="usage"], input[data-f="when"] { min-height: 50px; }
-        .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
-        .duplicate { background: #9C27B0; color: white; border: none; padding: 5px 10px; cursor: pointer; }
-        .undo-redo { background: #607D8B; color: white; border: none; padding: 8px 15px; margin: 5px; cursor: pointer; }
-        .taken-row { background-color: #f0f0f0; opacity: 0.7; }
-        .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
-        .missed-row { background-color: #ffebee; opacity: 0.8; border-left: 4px solid #f44336; }
-        .missed-row input, .missed-row select, .missed-row textarea { background-color: #ffcdd2; }
-        .schedule-header { background: #e8f4f8; font-weight: bold; }
+        /* Global styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex; /* Added for mobile wrapping */
+            flex-wrap: wrap; /* Added for mobile wrapping */
+            gap: 10px; /* Added for mobile wrapping */
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add {
+            background: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .export {
+            background: #2196F3;
+            color: white;
+            border: none;
+        }
+
+        .clear {
+            background: #f44336;
+            color: white;
+            border: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            min-height: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        td {
+            vertical-align: top;
+        }
+
+        input[data-f="usage"],
+        input[data-f="when"] {
+            min-height: 50px;
+        }
+
+        .del {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .duplicate {
+            background: #9C27B0;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .taken-row {
+            background-color: #f0f0f0;
+            opacity: 0.7;
+        }
+
+        .taken-row input,
+        .taken-row select,
+        .taken-row textarea {
+            background-color: #f5f5f5;
+        }
+
+        .missed-row {
+            background-color: #ffebee;
+            opacity: 0.8;
+            border-left: 4px solid #f44336;
+        }
+
+        .missed-row input,
+        .missed-row select,
+        .missed-row textarea {
+            background-color: #ffcdd2;
+        }
+
+        .schedule-header {
+            background: #e8f4f8;
+            font-weight: bold;
+        }
+
+        /* --- MOBILE RESPONSIVE FIX --- */
+        @media (max-width: 768px) {
+            table {
+                border: 0;
+            }
+
+            table thead {
+                /* Hide the header, we will use data-labels */
+                display: none;
+            }
+
+            table tr {
+                /* Stack rows into "cards" */
+                display: block;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            table td {
+                /* Stack cells vertically */
+                display: block;
+                padding: 12px;
+                padding-left: 50%;
+                /* Make space for the label */
+                position: relative;
+                text-align: left;
+                border: none;
+                border-bottom: 1px solid #eee;
+            }
+
+            table td:last-child {
+                border-bottom: 0;
+            }
+
+            /* Add the data-label as a "header" for each cell */
+            table td::before {
+                content: attr(data-label);
+                /* Get text from data-label attribute */
+                position: absolute;
+                left: 10px;
+                width: 40%;
+                padding-right: 10px;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+
+            /* Adjust inputs to fit this new layout */
+            input,
+            select,
+            textarea {
+                width: 100%;
+            }
+
+            /* Fix z-index overlap on mobile */
+            td[data-label="Taken"] div {
+                position: relative;
+                z-index: 2; /* Button on top */
+            }
+            td[data-label="Notes"] textarea {
+                position: relative;
+                z-index: 1; /* Notes box behind */
+            }
+        }
     </style>
 </head>
 <body>
@@ -40,7 +220,7 @@
         <button class="export" onclick="signup()" style="width:48%; margin:2%;">Sign Up</button>
         <div id="authError" style="color:red; margin-top:10px;"></div>
     </div>
-    
+
     <div id="appContainer" style="display:none;">
         <div style="text-align:right; margin-bottom:10px;">
             <span id="userEmail" style="margin-right:10px; font-weight:bold;"></span>
@@ -52,11 +232,7 @@
             <button class="add" id="addBtn">Add Medicine</button>
             <button class="export" id="exportBtn">Export CSV</button>
             <button class="clear" id="clearBtn">Clear Today</button>
-            <button class="undo-redo" id="undoBtn">↶ Undo</button>
-            <button class="undo-redo" id="redoBtn">↷ Redo</button>
-            <button class="export" onclick="save(); alert('Data saved to Firebase!')">🔥 Force Save</button>
-            <button class="export" onclick="load(); alert('Syncing with Firebase...')">🔄 Force Sync</button>
-        </div>
+            </div>
     </div>
     <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
     <table id="medsTable">
@@ -76,7 +252,7 @@
         <tbody id="list"></tbody>
     </table>
     </div>
-    
+
     <script type="module">
         // Make functions global for inline onclick handlers
         window.login = login;
@@ -84,9 +260,10 @@
         window.logout = logout;
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
-        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        // ** ADDED push, update, and remove **
+        import { getDatabase, ref, set, get, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
-        
+
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4",
@@ -97,25 +274,25 @@
             messagingSenderId: "230127910329",
             appId: "1:230127910329:web:114eea8f3846c446948a68"
         };
-        
+
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
-        
+
         let currentUser = null;
-        
+
         // Authentication functions
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('authError');
-            
+
             if (!email || !password) {
                 errorEl.textContent = 'Please enter email and password';
                 return;
             }
-            
+
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     currentUser = userCredential.user;
@@ -126,22 +303,22 @@
                     errorEl.textContent = 'Login failed: ' + error.message;
                 });
         }
-        
+
         function signup() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('authError');
-            
+
             if (!email || !password) {
                 errorEl.textContent = 'Please enter email and password';
                 return;
             }
-            
+
             if (password.length < 6) {
                 errorEl.textContent = 'Password must be at least 6 characters';
                 return;
             }
-            
+
             createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     currentUser = userCredential.user;
@@ -153,7 +330,7 @@
                     errorEl.textContent = 'Signup failed: ' + error.message;
                 });
         }
-        
+
         function logout() {
             if (confirm('Logout?')) {
                 signOut(auth).then(() => {
@@ -162,50 +339,78 @@
                 });
             }
         }
-        
+
         function showLogin() {
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('appContainer').style.display = 'none';
         }
-        
+
         function showApp() {
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userEmail').textContent = currentUser.email;
             load(); // Load medicines after login
         }
-        
+
         // Setup real-time sync listener
         let syncListener = null;
-        
+
+        // ** REWRITTEN setupRealtimeSync **
         function setupRealtimeSync() {
-            if (!currentUser || syncListener) return;
-            
+            if (!currentUser) return;
+            // Detach old listener if one exists
+            if (syncListener) syncListener(); 
+
             const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
+            const statusEl = document.getElementById('status') || createStatusElement();
+            statusEl.textContent = '🔄 Syncing with Firebase...';
+            statusEl.style.color = 'blue';
+
             syncListener = onValue(medsRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    const newData = snapshot.val() || [];
-                    // Only update if data is different to avoid render loops
-                    if (JSON.stringify(newData) !== JSON.stringify(meds)) {
-                        window.meds = newData;
-                        meds = window.meds;
-                        render();
-                        
-                        const statusEl = document.getElementById('status') || createStatusElement();
-                        statusEl.textContent = '🔄 Synced from another device';
-                        statusEl.style.color = 'blue';
-                        setTimeout(() => statusEl.textContent = '', 2000);
+                const data = snapshot.val(); // This is an OBJECT { key1: {...}, key2: {...} }
+                const newMedsArray = [];
+
+                if (data) {
+                    // Convert the object from Firebase into an array for rendering
+                    for (const key in data) {
+                        newMedsArray.push({
+                            id: key, // This is the unique Firebase key
+                            ...data[key]
+                        });
                     }
                 }
+
+                // Only re-render if the data has actually changed
+                if (JSON.stringify(newMedsArray) !== JSON.stringify(meds)) {
+                    console.log('Data updated from Firebase');
+                    window.meds = newMedsArray;
+                    meds = window.meds;
+                    render(); // Re-render the table with new data
+
+                    statusEl.textContent = `✅ Synced ${meds.length} medicines`;
+                    statusEl.style.color = 'green';
+                    setTimeout(() => statusEl.textContent = '', 2000);
+                } else {
+                     statusEl.textContent = '✅ Synced';
+                     statusEl.style.color = 'green';
+                     setTimeout(() => statusEl.textContent = '', 2000);
+                }
+                
+                // Check for localStorage migration *after* first load
+                migrateFromLocalStorage(); 
+
             }, (error) => {
                 console.error('Real-time sync error:', error);
+                statusEl.textContent = '❌ Sync failed. Check connection.';
+                statusEl.style.color = 'red';
             });
         }
         
         function disableRealtimeSync() {
-            syncListener = null;
+             if (syncListener) syncListener(); // Detach the listener
+             syncListener = null;
         }
-        
+
         // Check authentication state on load
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -217,82 +422,21 @@
                 showLogin();
             }
         });
-        
+
         if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
+
+        // --- Removed Undo/Redo functionality ---
+        // (saveState, undo, redo, updateUndoRedoButtons, undoStack, redoStack)
+        // This feature is not compatible with the new real-time data model
+        // and was a source of data corruption.
         
-        // Undo/Redo functionality
-        let undoStack = [];
-        let redoStack = [];
-        const MAX_UNDO = 20;
-        
-        function saveState() {
-            undoStack.push(JSON.stringify(meds));
-            if (undoStack.length > MAX_UNDO) undoStack.shift();
-            redoStack = []; // Clear redo when new action happens
-            updateUndoRedoButtons();
-        }
-        
-        function undo() {
-            if (undoStack.length === 0) return;
-            redoStack.push(JSON.stringify(meds));
-            const prevState = undoStack.pop();
-            window.meds = JSON.parse(prevState);
-            meds = window.meds;
-            save();
-            render();
-            updateUndoRedoButtons();
-        }
-        
-        function redo() {
-            if (redoStack.length === 0) return;
-            undoStack.push(JSON.stringify(meds));
-            const nextState = redoStack.pop();
-            window.meds = JSON.parse(nextState);
-            meds = window.meds;
-            save();
-            render();
-            updateUndoRedoButtons();
-        }
-        
-        function updateUndoRedoButtons() {
-            const undoBtn = document.getElementById('undoBtn');
-            const redoBtn = document.getElementById('redoBtn');
-            if (undoBtn) undoBtn.disabled = undoStack.length === 0;
-            if (redoBtn) redoBtn.disabled = redoStack.length === 0;
-        }
         document.getElementById('date').value = date;
-        
-        function save() {
-            if (!currentUser) {
-                alert('Please login first');
-                return;
-            }
-            
-            // Show saving indicator
-            const statusEl = document.getElementById('status') || createStatusElement();
-            statusEl.textContent = '🔥 Saving to Firebase...';
-            statusEl.style.color = 'orange';
-            
-            // Save to Firebase under user's UID
-            set(ref(db, 'users/' + currentUser.uid + '/medicines'), meds)
-                .then(() => {
-                    statusEl.textContent = '✅ Saved to Firebase (synced across devices)';
-                    statusEl.style.color = 'green';
-                    setTimeout(() => statusEl.textContent = '', 2000);
-                })
-                .catch((error) => {
-                    console.error('Firebase save error:', error);
-                    statusEl.textContent = '❌ Firebase save failed - using local storage';
-                    statusEl.style.color = 'red';
-                    
-                    // Fallback to localStorage
-                    localStorage.setItem('medicines', JSON.stringify(meds));
-                    setTimeout(() => statusEl.textContent = '', 3000);
-                });
-        }
-        
+
+        // --- Removed save() function ---
+        // We now save individual items via event listeners
+
         function createStatusElement() {
             const statusEl = document.createElement('div');
             statusEl.id = 'status';
@@ -300,72 +444,36 @@
             document.querySelector('.controls').appendChild(statusEl);
             return statusEl;
         }
-        
+
+        // ** MODIFIED load() function **
+        // This function now ONLY sets up the listener.
         function load() {
             if (!currentUser) {
                 return;
             }
-            
-            // Show loading indicator
-            const statusEl = document.getElementById('status') || createStatusElement();
-            statusEl.textContent = '🔥 Loading from Firebase...';
-            statusEl.style.color = 'blue';
-            
-            // Load from Firebase under user's UID
-            get(ref(db, 'users/' + currentUser.uid + '/medicines'))
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        window.meds = snapshot.val() || [];
-                        meds = window.meds;
-                        statusEl.textContent = `✅ Loaded ${meds.length} medicines from Firebase`;
-                        statusEl.style.color = 'green';
-                        setTimeout(() => statusEl.textContent = '', 2000);
-                        
-                        // Check for localStorage migration
-                        migrateFromLocalStorage();
-                    } else {
-                        // No data in Firebase, check localStorage
-                        migrateFromLocalStorage();
-                        if (meds.length === 0) {
-                            statusEl.textContent = '🆕 No medicines found. Start adding!';
-                            setTimeout(() => statusEl.textContent = '', 2000);
-                        }
-                    }
-                    render();
-                    
-                    // Enable real-time sync
-                    setupRealtimeSync();
-                })
-                .catch((error) => {
-                    console.error('Firebase load error:', error);
-                    statusEl.textContent = '❌ Firebase load failed - trying local backup...';
-                    statusEl.style.color = 'orange';
-                    
-                    // Fallback to localStorage
-                    const localData = localStorage.getItem('medicines');
-                    if (localData) {
-                        window.meds = JSON.parse(localData);
-                        meds = window.meds;
-                        statusEl.textContent = `📱 Loaded ${meds.length} medicines from local backup`;
-                        setTimeout(() => statusEl.textContent = '', 3000);
-                    } else {
-                        statusEl.textContent = '❌ No data found. Start adding medicines.';
-                        meds = [];
-                    }
-                    render();
-                });
+            // Enable real-time sync
+            setupRealtimeSync();
         }
-        
+
+        // ** MODIFIED migrateFromLocalStorage **
+        // Now uses push() to safely add old data to Firebase
         function migrateFromLocalStorage() {
             try {
                 const localData = localStorage.getItem('medicines');
                 if (localData) {
                     const oldMeds = JSON.parse(localData);
+                    // Check if firebase is empty (meds.length) and local has data
                     if (oldMeds && oldMeds.length > 0 && meds.length === 0) {
                         console.log('Migrating', oldMeds.length, 'medicines from localStorage to Firebase...');
-                        window.meds = oldMeds;
-                        meds = window.meds;
-                        save(); // Save to Firebase
+                        const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
+                        
+                        // Use a loop to PUSH each item, creating unique IDs
+                        oldMeds.forEach(med => {
+                            // Create a new ref with a unique ID for each
+                            const newMedRef = push(medsRef);
+                            set(newMedRef, med); // Use set on the *new* ref
+                        });
+
                         localStorage.removeItem('medicines'); // Clear localStorage after successful migration
                         const statusEl = document.getElementById('status') || createStatusElement();
                         statusEl.textContent = `🔥 Migrated ${oldMeds.length} medicines to Firebase!`;
@@ -377,49 +485,51 @@
                 console.error('Migration error:', err);
             }
         }
-        
+
         function parseTime(timeStr) {
             // Parse time like "4pm", "12:30pm", "16:00" to minutes since midnight
             if (!timeStr) return 0;
             const lower = timeStr.toLowerCase().trim();
-            let hours = 0, minutes = 0;
-            
+            let hours = 0,
+                minutes = 0;
+
             const match = lower.match(/(\d+):?(\d*)\s*(am|pm)?/);
             if (match) {
                 hours = parseInt(match[1]);
                 minutes = match[2] ? parseInt(match[2]) : 0;
                 const meridiem = match[3];
-                
+
                 if (meridiem === 'pm' && hours !== 12) hours += 12;
                 if (meridiem === 'am' && hours === 12) hours = 0;
             }
-            
+
             return hours * 60 + minutes;
         }
-        
+
         function getScheduleTime(when) {
             // Return approximate time in minutes for standard schedules
             const times = {
-                'Before Breakfast': 7 * 60,      // 7:00 AM
-                'After Breakfast': 9 * 60,       // 9:00 AM
-                'Before Lunch': 12 * 60,         // 12:00 PM
-                'After Lunch': 14 * 60,          // 2:00 PM
-                'Before Dinner': 19 * 60,        // 7:00 PM
-                'After Dinner': 21 * 60          // 9:00 PM
+                'Before Breakfast': 7 * 60, // 7:00 AM
+                'After Breakfast': 9 * 60, // 9:00 AM
+                'Before Lunch': 12 * 60, // 12:00 PM
+                'After Lunch': 14 * 60, // 2:00 PM
+                'Before Dinner': 19 * 60, // 7:00 PM
+                'After Dinner': 21 * 60 // 9:00 PM
             };
             return times[when] || 0;
         }
-        
+
+        // ** MODIFIED render() function **
         function render() {
             const tbody = document.getElementById('list');
             tbody.innerHTML = '';
-            
+
             // Create groups for medicines
             const groups = [];
-            
+
             meds.forEach(m => {
                 let groupName, sortTime;
-                
+
                 if (m.when === 'Custom...' && m.customWhen) {
                     groupName = m.customWhen;
                     sortTime = parseTime(m.customWhen);
@@ -427,39 +537,45 @@
                     groupName = m.when;
                     sortTime = getScheduleTime(m.when);
                 }
-                
+
                 let group = groups.find(g => g.name === groupName);
                 if (!group) {
-                    group = { name: groupName, sortTime: sortTime, meds: [] };
+                    group = {
+                        name: groupName,
+                        sortTime: sortTime,
+                        meds: []
+                    };
                     groups.push(group);
                 }
                 group.meds.push(m);
             });
-            
+
             // Sort groups by time
             groups.sort((a, b) => a.sortTime - b.sortTime);
-            
+
             // Render each group
             groups.forEach(group => {
                 // Add schedule header
                 const headerRow = tbody.insertRow();
                 headerRow.className = 'schedule-header';
                 headerRow.innerHTML = `<td colspan="9">${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})</td>`;
-                
+
                 // Add medicines for this group
                 group.meds.forEach(m => {
-                    const i = meds.indexOf(m);
+                    // ** USE m.id (Firebase key) instead of array index **
+                    const i = m.id;
                     const row = tbody.insertRow();
                     if (m.taken[date] === true) {
                         row.className = 'taken-row';
                     } else if (m.taken[date] === 'missed') {
                         row.className = 'missed-row';
                     }
+                    // ** ADDED data-label attributes for mobile CSS **
                     row.innerHTML = `
-                        <td><input value="${m.name}" data-i="${i}" data-f="name"></td>
-                        <td><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${m.usage}</textarea></td>
-                        <td><input type="number" value="${m.dosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
-                        <td><select data-i="${i}" data-f="unit">
+                        <td data-label="Medicine"><input value="${m.name}" data-i="${i}" data-f="name"></td>
+                        <td data-label="Usage"><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${m.usage}</textarea></td>
+                        <td data-label="Dosage"><input type="number" value="${m.dosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
+                        <td data-label="Unit"><select data-i="${i}" data-f="unit">
                             <option ${m.unit=='tablets'?'selected':''}>tablets</option>
                             <option ${m.unit=='ml'?'selected':''}>ml</option>
                             <option ${m.unit=='mg'?'selected':''}>mg</option>
@@ -469,8 +585,8 @@
                             <option ${m.unit=='Teaspoons'?'selected':''}>Teaspoons</option>
                             <option ${m.unit=='Custom'?'selected':''}>Custom...</option>
                         </select></td>
-                        <td><input value="${m.time}" data-i="${i}" data-f="time" placeholder="Morning"></td>
-                        <td><select data-i="${i}" data-f="when">
+                        <td data-label="Time"><input value="${m.time}" data-i="${i}" data-f="time" placeholder="Morning"></td>
+                        <td data-label="When"><select data-i="${i}" data-f="when">
                             <option ${m.when=='Before Breakfast'?'selected':''}>Before Breakfast</option>
                             <option ${m.when=='After Breakfast'?'selected':''}>After Breakfast</option>
                             <option ${m.when=='Before Lunch'?'selected':''}>Before Lunch</option>
@@ -480,16 +596,18 @@
                             <option ${m.when=='Custom...'?'selected':''}>Custom...</option>
                         </select>
                         ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}</td>
-                        <td>
-                            <div style="display:flex; align-items:center; gap:5px;">
+                        <td data-label="Taken">
+                            <div style="display:flex; align-items:center; gap:5px; position:relative; z-index: 2;">
                                 <input type="checkbox" ${m.taken[date] === true ?'checked':''} data-i="${i}" data-f="taken" style="margin:0;">
                                 <button class="missed-btn" data-i="${i}" style="background:${m.taken[date] === 'missed' ? '#f44336' : '#ff9800'}; color:white; border:none; padding:2px 6px; font-size:10px; cursor:pointer; border-radius:3px;">
                                     ${m.taken[date] === 'missed' ? 'MISSED' : 'Miss'}
                                 </button>
                             </div>
                         </td>
-                        <td><textarea data-i="${i}" data-f="notes">${m.notes||''}</textarea></td>
-                        <td>
+                        <td data-label="Notes">
+                            <textarea data-i="${i}" data-f="notes" style="position:relative; z-index: 1;">${m.notes||''}</textarea>
+                        </td>
+                        <td data-label="Actions">
                             <button class="duplicate" data-i="${i}">Copy</button>
                             <button class="del" data-i="${i}">X</button>
                         </td>
@@ -498,13 +616,13 @@
             });
             updateSummary();
         }
-        
+
         function updateSummary() {
             const total = meds.length;
             const taken = meds.filter(m => m.taken[date] === true).length;
             const missed = meds.filter(m => m.taken[date] === 'missed').length;
             const pending = total - taken - missed;
-            const pct = total ? Math.round(taken/total*100) : 0;
+            const pct = total ? Math.round(taken / total * 100) : 0;
             document.getElementById('summary').innerHTML = `
                 Total: ${total} | 
                 ✅ Taken: ${taken} | 
@@ -513,110 +631,166 @@
                 Completion: ${pct}%
             `;
         }
-        
+
+        // ** MODIFIED 'change' listener **
+        // Now uses update() and set/remove for individual fields
         document.getElementById('list').addEventListener('change', e => {
-            const i = e.target.dataset.i;
-            const f = e.target.dataset.f;
-            if (i !== undefined && f) {
-                saveState(); // Save state before change
-                if (f === 'taken') {
-                    meds[i].taken[date] = e.target.checked;
-                    // Update row styling when taken status changes
-                    const row = e.target.closest('tr');
-                    if (e.target.checked) {
-                        row.className = 'taken-row';
+            const medId = e.target.dataset.i; // This is now the Firebase key
+            const field = e.target.dataset.f;
+
+            if (medId && field) {
+                // No saveState()
+                const medRef = ref(db, `users/${currentUser.uid}/medicines/${medId}`);
+
+                if (field === 'taken') {
+                    const isChecked = e.target.checked;
+                    // Path to the specific date in the 'taken' object
+                    const takenDateRef = ref(db, `users/${currentUser.uid}/medicines/${medId}/taken/${date}`);
+
+                    if (isChecked) {
+                        set(takenDateRef, true); // Use set to add the date key
                     } else {
-                        row.className = '';
+                        remove(takenDateRef); // Use remove to delete the date key
                     }
+                    // No render() call needed! The onValue listener handles it.
+
                 } else {
-                    meds[i][f] = e.target.value;
-                    // If schedule changed, re-render to group properly
-                    if (f === 'when') {
-                        render();
-                        return;
-                    }
+                    // Use update() to change a single field
+                    update(medRef, {
+                        [field]: e.target.value
+                    }).catch(err => console.error('Update failed: ', err));
+
+                    // If 'when' changed, the onValue listener will auto-render and re-group.
                 }
-                save();
-                updateSummary();
+                
+                // No save() or updateSummary() needed here. onValue handles it.
             }
         });
-        
+
+        // ** MODIFIED 'click' listener **
+        // Now uses remove(), push(), and set/remove for actions
         document.getElementById('list').addEventListener('click', e => {
+            const medId = e.target.dataset.i; // This is the Firebase ID
+
             if (e.target.classList.contains('del')) {
-                const i = e.target.dataset.i;
                 if (confirm('Delete?')) {
-                    saveState();
-                    meds.splice(i, 1);
-                    save();
-                    render();
+                    // No saveState()
+                    const medRef = ref(db, 'users/' + currentUser.uid + '/medicines/' + medId);
+                    remove(medRef); // This is the new delete
+                    // No save() or render()
                 }
             } else if (e.target.classList.contains('duplicate')) {
-                const i = e.target.dataset.i;
-                saveState();
-                const duplicate = JSON.parse(JSON.stringify(meds[i]));
+                // No saveState()
+                
+                // Find the med data from our local array
+                const originalMed = meds.find(m => m.id === medId);
+                if (!originalMed) return;
+
+                const duplicate = JSON.parse(JSON.stringify(originalMed));
                 duplicate.name += ' (Copy)';
-                meds.splice(parseInt(i) + 1, 0, duplicate);
-                save();
-                render();
+                delete duplicate.id; // Remove the ID so Firebase generates a new one
+
+                const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
+                push(medsRef, duplicate); // Add the copy
+                // No save() or render()
+
             } else if (e.target.classList.contains('missed-btn')) {
-                const i = e.target.dataset.i;
-                const currentStatus = meds[i].taken[date];
-                
+                const takenDateRef = ref(db, `users/${currentUser.uid}/medicines/${medId}/taken/${date}`);
+
+                // Find the current med in the local array to check its status
+                const currentMed = meds.find(m => m.id === medId);
+                // Use optional chaining for safety
+                const currentStatus = currentMed?.taken?.[date]; 
+
                 if (currentStatus === 'missed') {
-                    // If already missed, reset to not taken
-                    delete meds[i].taken[date];
+                    remove(takenDateRef); // Reset to pending (deletes the key)
                 } else {
-                    // Mark as missed
-                    meds[i].taken[date] = 'missed';
-                    // Uncheck the checkbox
-                    const checkbox = e.target.closest('tr').querySelector('input[type="checkbox"]');
-                    checkbox.checked = false;
+                    set(takenDateRef, 'missed'); // Mark as missed
                 }
-                
-                save();
-                render();
+                // No save() or render()
             }
         });
-        
+
+        // ** MODIFIED 'addBtn' listener **
+        // Now uses push() to create a new item
         document.getElementById('addBtn').addEventListener('click', () => {
-            saveState();
-            meds.push({ name:'', usage:'', dosage:'', unit:'tablets', time:'', when:'After Breakfast', customWhen:'', taken:{}, notes:'' });
-            save();
-            render();
+            // No saveState()
+            const newMed = {
+                name: '',
+                usage: '',
+                dosage: '',
+                unit: 'tablets',
+                time: '',
+                when: 'After Breakfast',
+                customWhen: '',
+                taken: {},
+                notes: ''
+            };
+
+            // Use push() to add the new medicine to Firebase
+            const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
+            push(medsRef, newMed)
+                .then(() => {
+                    console.log('Added new medicine');
+                })
+                .catch(err => {
+                    console.error('Failed to add medicine: ', err);
+                });
+            
+            // No need to call save() or render(). The onValue listener will do it automatically.
         });
         
-        document.getElementById('undoBtn').addEventListener('click', undo);
-        document.getElementById('redoBtn').addEventListener('click', redo);
-        
+        // Removed undoBtn and redoBtn listeners
+
         document.getElementById('date').addEventListener('change', e => {
             date = e.target.value;
-            render();
+            render(); // Re-render with the new date
         });
-        
+
+        // ** MODIFIED 'clearBtn' listener **
+        // Now sends a single multi-path update to Firebase
         document.getElementById('clearBtn').addEventListener('click', () => {
             if (confirm(`Clear all taken/missed status for ${date}?`)) {
-                saveState();
+                // Create a list of all updates to send to Firebase
+                const updates = {};
+                
                 meds.forEach(m => {
-                    delete m.taken[date];
+                    // Check if an entry for this date exists
+                    if (m.taken && m.taken[date] !== undefined) {
+                        // Prepare to set this path to 'null' to delete it
+                        updates[`users/${currentUser.uid}/medicines/${m.id}/taken/${date}`] = null;
+                    }
                 });
-                save();
-                render();
+
+                // Send all updates at once using a single update() call on the root ref
+                if (Object.keys(updates).length > 0) {
+                    update(ref(db), updates)
+                        .then(() => {
+                            console.log('Cleared all statuses for the day.');
+                        })
+                        .catch(err => {
+                            console.error('Failed to clear statuses: ', err);
+                        });
+                }
+                // No save() or render() needed
             }
         });
-        
+
         document.getElementById('exportBtn').addEventListener('click', () => {
             let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
             meds.forEach(m => {
                 const status = m.taken[date] === true ? 'Taken' : m.taken[date] === 'missed' ? 'Missed' : 'Pending';
                 csv += `"${m.name}","${m.usage}","${m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
             });
-            const blob = new Blob([csv], {type:'text/csv'});
+            const blob = new Blob([csv], {
+                type: 'text/csv'
+            });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `meds-${date}.csv`;
             a.click();
         });
-        
+
         // Don't auto-load - wait for authentication
         // load() will be called from showApp() after login
     </script>
