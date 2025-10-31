@@ -22,6 +22,8 @@
         .del { background: #f44336; color: white; border: none; padding: 5px 10px; cursor: pointer; }
         .taken-row { background-color: #f0f0f0; opacity: 0.7; }
         .taken-row input, .taken-row select, .taken-row textarea { background-color: #f5f5f5; }
+        .missed-row { background-color: #ffebee; opacity: 0.8; border-left: 4px solid #f44336; }
+        .missed-row input, .missed-row select, .missed-row textarea { background-color: #ffcdd2; }
         .schedule-header { background: #e8f4f8; font-weight: bold; }
     </style>
 </head>
@@ -367,8 +369,10 @@
                 group.meds.forEach(m => {
                     const i = meds.indexOf(m);
                     const row = tbody.insertRow();
-                    if (m.taken[date]) {
+                    if (m.taken[date] === true) {
                         row.className = 'taken-row';
+                    } else if (m.taken[date] === 'missed') {
+                        row.className = 'missed-row';
                     }
                     row.innerHTML = `
                         <td><input value="${m.name}" data-i="${i}" data-f="name"></td>
@@ -395,7 +399,14 @@
                             <option ${m.when=='Custom...'?'selected':''}>Custom...</option>
                         </select>
                         ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}</td>
-                        <td><input type="checkbox" ${m.taken[date]?'checked':''} data-i="${i}" data-f="taken"></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <input type="checkbox" ${m.taken[date] === true ?'checked':''} data-i="${i}" data-f="taken" style="margin:0;">
+                                <button class="missed-btn" data-i="${i}" style="background:${m.taken[date] === 'missed' ? '#f44336' : '#ff9800'}; color:white; border:none; padding:2px 6px; font-size:10px; cursor:pointer; border-radius:3px;">
+                                    ${m.taken[date] === 'missed' ? 'MISSED' : 'Miss'}
+                                </button>
+                            </div>
+                        </td>
                         <td><textarea data-i="${i}" data-f="notes">${m.notes||''}</textarea></td>
                         <td><button class="del" data-i="${i}">X</button></td>
                     `;
@@ -406,9 +417,17 @@
         
         function updateSummary() {
             const total = meds.length;
-            const taken = meds.filter(m => m.taken[date]).length;
+            const taken = meds.filter(m => m.taken[date] === true).length;
+            const missed = meds.filter(m => m.taken[date] === 'missed').length;
+            const pending = total - taken - missed;
             const pct = total ? Math.round(taken/total*100) : 0;
-            document.getElementById('summary').innerHTML = `Total: ${total} | Taken: ${taken} | Completion: ${pct}%`;
+            document.getElementById('summary').innerHTML = `
+                Total: ${total} | 
+                ✅ Taken: ${taken} | 
+                ❌ Missed: ${missed} | 
+                ⏳ Pending: ${pending} | 
+                Completion: ${pct}%
+            `;
         }
         
         document.getElementById('list').addEventListener('change', e => {
@@ -445,6 +464,23 @@
                     save();
                     render();
                 }
+            } else if (e.target.classList.contains('missed-btn')) {
+                const i = e.target.dataset.i;
+                const currentStatus = meds[i].taken[date];
+                
+                if (currentStatus === 'missed') {
+                    // If already missed, reset to not taken
+                    delete meds[i].taken[date];
+                } else {
+                    // Mark as missed
+                    meds[i].taken[date] = 'missed';
+                    // Uncheck the checkbox
+                    const checkbox = e.target.closest('tr').querySelector('input[type="checkbox"]');
+                    checkbox.checked = false;
+                }
+                
+                save();
+                render();
             }
         });
         
@@ -471,7 +507,8 @@
         document.getElementById('exportBtn').addEventListener('click', () => {
             let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
             meds.forEach(m => {
-                csv += `"${m.name}","${m.usage}","${m.dosage}","${m.unit}","${m.time}","${m.when}","${m.taken[date]?'Yes':'No'}","${m.notes||''}"\n`;
+                const status = m.taken[date] === true ? 'Taken' : m.taken[date] === 'missed' ? 'Missed' : 'Pending';
+                csv += `"${m.name}","${m.usage}","${m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
             });
             const blob = new Blob([csv], {type:'text/csv'});
             const a = document.createElement('a');
