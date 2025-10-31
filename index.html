@@ -26,16 +26,33 @@
     </style>
 </head>
 <body>
-    <h1>💊 Medicine Tracker</h1>
-    <div class="controls">
-        <label>Date: <input type="date" id="date"></label>
-        <button class="add" id="addBtn">Add Medicine</button>
-        <button class="export" id="exportBtn">Export CSV</button>
-        <button class="clear" id="clearBtn">Clear All</button>
-        <button class="export" onclick="save(); alert('Data saved to Firebase!')">🔥 Force Save</button>
+    <div id="authContainer" style="display:none; max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px;">
+        <h2>🔒 Login to Medicine Tracker</h2>
+        <div style="margin:20px 0;">
+            <input type="email" id="email" placeholder="Email" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+            <input type="password" id="password" placeholder="Password" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+        </div>
+        <button class="add" onclick="login()" style="width:48%; margin:2%;">Login</button>
+        <button class="export" onclick="signup()" style="width:48%; margin:2%;">Sign Up</button>
+        <div id="authError" style="color:red; margin-top:10px;"></div>
+    </div>
+    
+    <div id="appContainer" style="display:none;">
+        <div style="text-align:right; margin-bottom:10px;">
+            <span id="userEmail" style="margin-right:10px; font-weight:bold;"></span>
+            <button class="clear" onclick="logout()" style="padding:5px 15px;">Logout</button>
+        </div>
+        <h1>💊 Medicine Tracker</h1>
+        <div class="controls">
+            <label>Date: <input type="date" id="date"></label>
+            <button class="add" id="addBtn">Add Medicine</button>
+            <button class="export" id="exportBtn">Export CSV</button>
+            <button class="clear" id="clearBtn">Clear All</button>
+            <button class="export" onclick="save(); alert('Data saved to Firebase!')">🔥 Force Save</button>
+        </div>
     </div>
     <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
-    <table>
+    <table id="medsTable">
         <thead>
             <tr>
                 <th>Medicine</th>
@@ -51,10 +68,17 @@
         </thead>
         <tbody id="list"></tbody>
     </table>
+    </div>
+    
     <script type="module">
+        // Make functions global for inline onclick handlers
+        window.login = login;
+        window.signup = signup;
+        window.logout = logout;
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
         import { getDatabase, ref, set, get } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
         
         // Firebase configuration
         const firebaseConfig = {
@@ -70,20 +94,109 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        let currentUser = null;
+        
+        // Authentication functions
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('authError');
+            
+            if (!email || !password) {
+                errorEl.textContent = 'Please enter email and password';
+                return;
+            }
+            
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    errorEl.textContent = '';
+                    showApp();
+                })
+                .catch((error) => {
+                    errorEl.textContent = 'Login failed: ' + error.message;
+                });
+        }
+        
+        function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('authError');
+            
+            if (!email || !password) {
+                errorEl.textContent = 'Please enter email and password';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorEl.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+            
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    errorEl.textContent = '';
+                    alert('Account created successfully!');
+                    showApp();
+                })
+                .catch((error) => {
+                    errorEl.textContent = 'Signup failed: ' + error.message;
+                });
+        }
+        
+        function logout() {
+            if (confirm('Logout?')) {
+                signOut(auth).then(() => {
+                    currentUser = null;
+                    showLogin();
+                });
+            }
+        }
+        
+        function showLogin() {
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('appContainer').style.display = 'none';
+        }
+        
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userEmail').textContent = currentUser.email;
+            load(); // Load medicines after login
+        }
+        
+        // Check authentication state on load
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                showApp();
+            } else {
+                currentUser = null;
+                showLogin();
+            }
+        });
         
         if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = date;
         
-        function save() { 
+        function save() {
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+            
             // Show saving indicator
             const statusEl = document.getElementById('status') || createStatusElement();
             statusEl.textContent = '🔥 Saving to Firebase...';
             statusEl.style.color = 'orange';
             
-            // Save to Firebase
-            set(ref(db, 'medicines'), meds)
+            // Save to Firebase under user's UID
+            set(ref(db, 'users/' + currentUser.uid + '/medicines'), meds)
                 .then(() => {
                     statusEl.textContent = '✅ Saved to Firebase (synced across devices)';
                     statusEl.style.color = 'green';
@@ -109,13 +222,17 @@
         }
         
         function load() {
+            if (!currentUser) {
+                return;
+            }
+            
             // Show loading indicator
             const statusEl = document.getElementById('status') || createStatusElement();
             statusEl.textContent = '🔥 Loading from Firebase...';
             statusEl.style.color = 'blue';
             
-            // Load from Firebase
-            get(ref(db, 'medicines'))
+            // Load from Firebase under user's UID
+            get(ref(db, 'users/' + currentUser.uid + '/medicines'))
                 .then((snapshot) => {
                     if (snapshot.exists()) {
                         window.meds = snapshot.val() || [];
@@ -363,7 +480,8 @@
             a.click();
         });
         
-        load(); // Load from Firebase on startup
+        // Don't auto-load - wait for authentication
+        // load() will be called from showApp() after login
     </script>
 </body>
 </html>
