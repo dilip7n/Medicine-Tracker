@@ -134,22 +134,23 @@
             display: none; 
         }
         
-        /* NEW: Container for the schedule headers on mobile (rendered below) */
+        /* Mobile Group Header */
         .mobile-group-header {
             display: none; /* Hide on desktop */
             background: #e0f2f1;
-            padding: 10px;
+            padding: 12px;
             margin: 15px 0 5px 0;
             font-weight: bold;
             text-align: center;
             border-radius: 4px;
+            color: #333;
+            font-size: 1.1em;
         }
 
         /* --- MOBILE RESPONSIVE FIXES: Collapsible Cards --- */
         @media (max-width: 768px) {
             table {
                 border: 0;
-                /* Remove top margin on mobile, relying on group headers for spacing */
                 margin-top: 0; 
             }
 
@@ -167,7 +168,12 @@
                 display: none; 
             }
             
-            /* Hide all standard table cells on Mobile */
+            /* Hide the main table body container on mobile (we use dynamic containers) */
+            #list {
+                display: block;
+            }
+
+            /* For mobile view, hide standard cells */
             table td:not(.mobile-card-cell) {
                 display: none !important; 
                 padding: 0;
@@ -183,7 +189,7 @@
             /* Container for each medicine item (the card) */
             table tr.med-row {
                 display: block;
-                margin-bottom: 10px; /* Reduced margin for tighter grouping */
+                margin-bottom: 10px; 
                 border: 1px solid #ccc;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -191,6 +197,12 @@
                 transition: background-color 0.3s;
             }
             
+            /* Ensure the table body containing the rows is a block element for mobile flow */
+            table tbody {
+                display: block;
+                width: 100%;
+            }
+
             /* Enhanced Medicine Name Header (always visible) */
             .med-header {
                 display: flex;
@@ -398,7 +410,7 @@
         
         document.getElementById('date').value = date;
 
-        // --- Authentication & Setup Functions ---
+        // --- Authentication & Setup Functions (Same as previous) ---
         function toggleSignupMode() {
             const container = document.getElementById('authContainer');
             const toggleBtn = document.getElementById('signupToggleBtn');
@@ -616,20 +628,21 @@
             return 'pending';
         }
 
-        // --- Render Function (Modified for Mobile Grouping) ---
+        // --- Render Function (FIXED Mobile Grouping) ---
         function render() {
             const tbody = document.getElementById('list');
             const mobileGroupContainer = document.getElementById('mobileGroupList');
+            
+            // Clear both containers
             tbody.innerHTML = '';
-            mobileGroupContainer.innerHTML = ''; // Clear mobile headers
+            mobileGroupContainer.innerHTML = ''; 
 
-            // 1. Filter the medicines based on the current selection
+            // 1. Filter the medicines
             const filteredMeds = meds.filter(m => {
                 if (currentFilter === 'all') return true;
                 return getStatus(m) === currentFilter;
             });
             
-            // If no medicines match the filter, show a message
             if (filteredMeds.length === 0) {
                  const messageRow = tbody.insertRow();
                  messageRow.innerHTML = `<td colspan="9" style="text-align:center; padding:20px; color:#555;">No medicines match the "${currentFilter.toUpperCase()}" filter for this date.</td>`;
@@ -637,9 +650,8 @@
                  return;
             }
 
-            // 2. Group the filtered medicines
+            // 2. Group and Sort the filtered medicines
             const groups = [];
-
             filteredMeds.forEach(m => {
                 let groupName, sortTime;
                 if (m.when === 'Custom...' && m.customWhen) {
@@ -649,7 +661,6 @@
                     groupName = m.when;
                     sortTime = getScheduleTime(m.when);
                 }
-
                 let group = groups.find(g => g.name === groupName);
                 if (!group) {
                     group = { name: groupName, sortTime: sortTime, meds: [] };
@@ -663,7 +674,7 @@
             // 3. Render the groups and rows
             groups.forEach(group => {
                 
-                // --- Mobile Group Header (Rendered outside the table) ---
+                // --- Mobile Group Header (Rendered in the mobile container) ---
                 const mobileHeader = document.createElement('div');
                 mobileHeader.className = 'mobile-group-header';
                 mobileHeader.innerHTML = `${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})`;
@@ -673,7 +684,12 @@
                 const headerRow = tbody.insertRow();
                 headerRow.className = 'schedule-header';
                 headerRow.innerHTML = `<td colspan="9" class="custom-cell">${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})</td>`;
-
+                
+                // *** IMPORTANT FIX ***
+                // Create a temporary <tbody> for this group's rows on mobile
+                const groupTbody = document.createElement('tbody');
+                groupTbody.className = 'mobile-group-tbody';
+                
                 group.meds.forEach(m => {
                     const i = m.id; 
                     const medicineName = m.name || '';
@@ -683,9 +699,14 @@
                     const medicineNotes = m.notes || '';
                     const status = getStatus(m);
                     const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+                    
+                    // The row is inserted into the main tbody for desktop compatibility
+                    // It is also styled for mobile in the next step
                     const row = tbody.insertRow();
 
                     row.className = `med-row ${status === 'taken' ? 'taken-row' : status === 'missed' ? 'missed-row' : ''}`;
+                    row.dataset.groupId = group.name; // Tagging the row for mobile processing
+
                     row.onclick = function(e) { 
                         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
                             this.classList.toggle('active'); 
@@ -810,7 +831,7 @@
             updateSummary();
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners (Same as previous) ---
         
         document.getElementById('filterStatus').addEventListener('change', e => {
             currentFilter = e.target.value;
@@ -908,14 +929,4 @@
             let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
             meds.forEach(m => {
                 const status = m.taken && m.taken[date] === true ? 'Taken' : m.taken && m.taken[date] === 'missed' ? 'Missed' : 'Pending';
-                csv += `"${m.name}","${m.usage}","${m.dosage === undefined ? '' : m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `meds-${date}.csv`;
-            a.click();
-        });
-    </script>
-</body>
-</html>
+                csv += `"${m.name}","${m.usage}","${m.dosage === undefined ? '' : m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n
