@@ -29,7 +29,6 @@
             align-items: center;
         }
         
-        /* Style for the filter/date control groups */
         .control-group {
             display: flex;
             align-items: center;
@@ -130,6 +129,11 @@
             font-weight: bold;
         }
 
+        /* FIX: Hide mobile card cell on Desktop */
+        td.mobile-card-cell {
+            display: none; 
+        }
+
         /* --- MOBILE RESPONSIVE FIXES: Collapsible Cards --- */
         @media (max-width: 768px) {
             table {
@@ -140,9 +144,17 @@
                 display: none;
             }
             
-            /* Hide all original desktop cells */
-            table td:not(.custom-cell) {
-                display: none !important;
+            /* FIX: Hide all standard table cells on Mobile */
+            table td:not(.mobile-card-cell) {
+                display: none !important; 
+                padding: 0;
+            }
+            
+            /* FIX: Show the mobile card cell on Mobile */
+            table td.mobile-card-cell {
+                display: block !important;
+                padding: 0;
+                border: none;
             }
 
             /* Container for each medicine item (the card) */
@@ -154,13 +166,6 @@
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 overflow: hidden; 
                 transition: background-color 0.3s;
-            }
-            
-            /* FIX: Ensure the single cell containing the mobile UI spans correctly */
-            table tr.med-row td.mobile-card-cell {
-                display: block !important;
-                padding: 0;
-                border: none;
             }
             
             /* Enhanced Medicine Name Header (always visible) */
@@ -532,8 +537,6 @@
                      statusEl.style.color = 'green';
                      setTimeout(() => statusEl.textContent = '', 2000);
                 }
-                
-                // migrateFromLocalStorage(); 
             }, (error) => {
                 console.error('Real-time sync error:', error);
                 statusEl.textContent = '❌ Sync failed. Check connection.';
@@ -600,7 +603,7 @@
             return 'pending';
         }
 
-        // --- Render Function (FIXED and with Filtering) ---
+        // --- Render Function ---
         function render() {
             const tbody = document.getElementById('list');
             tbody.innerHTML = '';
@@ -662,15 +665,14 @@
                     row.className = `med-row ${status === 'taken' ? 'taken-row' : status === 'missed' ? 'missed-row' : ''}`;
                     row.onclick = function(e) { 
                         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
-                            // Only toggle the mobile card if the click wasn't on an editable element
                             this.classList.toggle('active'); 
                         }
                     };
 
-                    // --- Mobile Card Cell (Always included, hidden by CSS on desktop) ---
+                    // --- Mobile Card Cell (Only visible on mobile due to CSS fix) ---
                     const mobileCardCell = row.insertCell();
                     mobileCardCell.colSpan = 9;
-                    mobileCardCell.className = 'mobile-card-cell custom-cell'; // Added mobile-card-cell class for specific CSS targeting
+                    mobileCardCell.className = 'mobile-card-cell'; 
                     mobileCardCell.innerHTML = `
                         <div class="med-header">
                             <h4>${medicineName || 'New Medicine'}</h4>
@@ -734,7 +736,7 @@
                         </div>
                     `;
 
-                    // --- Desktop Cells (Hidden by CSS on Mobile) ---
+                    // --- Desktop Cells (Only visible on desktop due to CSS fix) ---
                     // These cells must be separate from the mobile card to maintain the desktop table structure
                     row.innerHTML += `
                         <td data-label="Medicine"><input value="${medicineName}" data-i="${i}" data-f="name"></td>
