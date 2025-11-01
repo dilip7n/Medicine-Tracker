@@ -929,4 +929,14 @@
             let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
             meds.forEach(m => {
                 const status = m.taken && m.taken[date] === true ? 'Taken' : m.taken && m.taken[date] === 'missed' ? 'Missed' : 'Pending';
-                csv += `"${m.name}","${m.usage}","${m.dosage === undefined ? '' : m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n
+                csv += `"${m.name}","${m.usage}","${m.dosage === undefined ? '' : m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `meds-${date}.csv`;
+            a.click();
+        });
+    </script>
+</body>
+</html>
