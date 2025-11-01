@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medicine Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
     <style>
         /* Global styles */
         * {
@@ -292,6 +293,8 @@
         </div>
         <h1>💊 Medicine Tracker</h1>
         <div class="controls">
+            <input type="text" id="searchBar" placeholder="Search by name or notes..." style="flex-grow: 1; max-width: 300px;">
+
             <div class="control-group">
                 <label for="filterStatus">Filter:</label>
                 <select id="filterStatus">
@@ -371,7 +374,8 @@
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
         let currentFilter = 'all'; 
-        
+        let searchQuery = ''; // New variable for search
+
         document.getElementById('date').value = date;
 
         // --- Authentication & Setup Functions ---
@@ -573,6 +577,10 @@
                 currentFilter = e.target.value;
                 render();
             };
+            document.getElementById('searchBar').oninput = (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                render();
+            };
             document.getElementById('clearBtn').onclick = clearToday;
             document.getElementById('exportBtn').onclick = exportCSV;
         }
@@ -729,11 +737,11 @@
                 } 
             }
             
-            // **IMPROVED FIX**: Handle mobile card expansion by ensuring the click target is the header or within it.
+            // IMPROVED FIX: Handle mobile card expansion by ensuring the click target is the header or within it.
             const header = e.target.closest('.med-header');
             if (header) {
-                // Ensure the click wasn't on the status indicator itself, which has separate styling/intent
-                if (!e.target.classList.contains('status-indicator')) {
+                // Ensure the click wasn't on the status indicator or any interactive element
+                if (!e.target.classList.contains('status-indicator') && e.target.tagName !== 'BUTTON') {
                     const card = header.closest('.mobile-card');
                     if (card) {
                         card.classList.toggle('active');
@@ -768,13 +776,20 @@
 
             // 1. Filter the medicines
             const filteredMeds = meds.filter(m => {
-                if (currentFilter === 'all') return true;
-                return getStatus(m) === currentFilter;
+                // Filter 1: Status Filter
+                const statusMatch = (currentFilter === 'all') || (getStatus(m) === currentFilter);
+
+                // Filter 2: Search Query Filter
+                const nameMatch = (m.name || '').toLowerCase().includes(searchQuery);
+                const notesMatch = (m.notes || '').toLowerCase().includes(searchQuery);
+                const searchMatch = searchQuery === '' || nameMatch || notesMatch;
+
+                return statusMatch && searchMatch;
             });
             
             if (filteredMeds.length === 0) {
                  const messageRow = tbody.insertRow();
-                 messageRow.innerHTML = `<td colspan="9" style="text-align:center; padding:20px; color:#555;">No medicines match the "${currentFilter.toUpperCase()}" filter for this date.</td>`;
+                 messageRow.innerHTML = `<td colspan="9" style="text-align:center; padding:20px; color:#555;">No medicines match the current filters for this date.</td>`;
                  updateSummary();
                  return;
             }
