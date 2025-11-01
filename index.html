@@ -26,10 +26,10 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            align-items: center; /* Align items vertically */
+            align-items: center;
         }
         
-        /* Style for the filter label/select */
+        /* Style for the filter/date control groups */
         .control-group {
             display: flex;
             align-items: center;
@@ -38,10 +38,11 @@
 
         button {
             padding: 10px 20px;
-            margin: 5px 0; /* Adjusted margin to fit control-group */
+            margin: 5px 0;
             cursor: pointer;
             font-size: 14px;
             border: none;
+            border-radius: 4px;
         }
 
         .add {
@@ -88,6 +89,7 @@
             box-sizing: border-box;
             min-height: 30px;
             border: 1px solid #ccc;
+            border-radius: 3px;
         }
 
         textarea {
@@ -100,6 +102,7 @@
             color: white;
             padding: 5px 10px;
             cursor: pointer;
+            border-radius: 3px;
         }
 
         .duplicate {
@@ -107,6 +110,7 @@
             color: white;
             padding: 5px 10px;
             cursor: pointer;
+            border-radius: 3px;
         }
 
         /* Status Colors */
@@ -135,7 +139,13 @@
             table thead {
                 display: none;
             }
+            
+            /* Hide all original desktop cells */
+            table td:not(.custom-cell) {
+                display: none !important;
+            }
 
+            /* Container for each medicine item (the card) */
             table tr.med-row {
                 display: block;
                 margin-bottom: 15px;
@@ -146,6 +156,14 @@
                 transition: background-color 0.3s;
             }
             
+            /* FIX: Ensure the single cell containing the mobile UI spans correctly */
+            table tr.med-row td.mobile-card-cell {
+                display: block !important;
+                padding: 0;
+                border: none;
+            }
+            
+            /* Enhanced Medicine Name Header (always visible) */
             .med-header {
                 display: flex;
                 justify-content: space-between;
@@ -184,13 +202,13 @@
                 display: block;
             }
 
-            table td {
+            /* Cells within the collapsible details */
+            .med-details > div {
                 display: flex; 
                 padding: 8px 0;
-                border-bottom: none;
             }
-
-            table td::before {
+            
+            .med-details > div::before {
                 content: attr(data-label);
                 font-weight: bold;
                 width: 30%; 
@@ -200,19 +218,21 @@
                 color: #555;
             }
             
-            table td > * {
+            .med-details > div > * {
                 flex-grow: 1;
                 width: auto !important; 
             }
 
-            td[data-label="Actions"] {
+            .med-details .action-row {
                 display: block; 
                 text-align: right;
                 padding-top: 15px;
+                border-top: 1px solid #eee;
+                margin-top: 10px;
             }
-
-            table td:not(.custom-cell) {
-                display: none;
+            
+            .med-details .action-row::before {
+                content: none;
             }
 
             table tr.schedule-header {
@@ -234,13 +254,19 @@
             }
             
             .control-group {
-                flex-direction: column;
-                align-items: stretch;
-                margin-bottom: 5px;
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+                padding: 5px 0;
             }
             
-            .control-group label, .control-group select {
-                width: 100%;
+            .control-group label {
+                flex-shrink: 0;
+            }
+            
+            .control-group input, .control-group select {
+                flex-grow: 1;
+                width: auto;
             }
         }
         
@@ -350,12 +376,11 @@
         if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
-        // NEW: Global variable for filtering
         let currentFilter = 'all'; 
         
         document.getElementById('date').value = date;
 
-        // --- Authentication & Setup Functions (Mostly Unchanged) ---
+        // --- Authentication & Setup Functions ---
         function toggleSignupMode() {
             const container = document.getElementById('authContainer');
             const toggleBtn = document.getElementById('signupToggleBtn');
@@ -508,7 +533,7 @@
                      setTimeout(() => statusEl.textContent = '', 2000);
                 }
                 
-                migrateFromLocalStorage(); 
+                // migrateFromLocalStorage(); 
             }, (error) => {
                 console.error('Real-time sync error:', error);
                 statusEl.textContent = '❌ Sync failed. Check connection.';
@@ -545,18 +570,37 @@
             setupRealtimeSync();
         }
 
-        function migrateFromLocalStorage() { /* unchanged */ }
-        function parseTime(timeStr) { /* unchanged */ }
-        function getScheduleTime(when) { /* unchanged */ }
+        function parseTime(timeStr) {
+            if (!timeStr) return 0;
+            const lower = timeStr.toLowerCase().trim();
+            let hours = 0, minutes = 0;
+            const match = lower.match(/(\d+):?(\d*)\s*(am|pm)?/);
+            if (match) {
+                hours = parseInt(match[1]);
+                minutes = match[2] ? parseInt(match[2]) : 0;
+                const meridiem = match[3];
+                if (meridiem === 'pm' && hours !== 12) hours += 12;
+                if (meridiem === 'am' && hours === 12) hours = 0;
+            }
+            return hours * 60 + minutes;
+        }
 
-        // Helper function to get the status of a medicine for the current date
+        function getScheduleTime(when) {
+            const times = {
+                'Before Breakfast': 7 * 60, 'After Breakfast': 9 * 60, 
+                'Before Lunch': 12 * 60, 'After Lunch': 14 * 60, 
+                'Before Dinner': 19 * 60, 'After Dinner': 21 * 60 
+            };
+            return times[when] || 0;
+        }
+
         function getStatus(m) {
             if (m.taken && m.taken[date] === true) return 'taken';
             if (m.taken && m.taken[date] === 'missed') return 'missed';
             return 'pending';
         }
 
-        // --- Render Function (MODIFIED for Filtering) ---
+        // --- Render Function (FIXED and with Filtering) ---
         function render() {
             const tbody = document.getElementById('list');
             tbody.innerHTML = '';
@@ -618,23 +662,25 @@
                     row.className = `med-row ${status === 'taken' ? 'taken-row' : status === 'missed' ? 'missed-row' : ''}`;
                     row.onclick = function(e) { 
                         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
+                            // Only toggle the mobile card if the click wasn't on an editable element
                             this.classList.toggle('active'); 
                         }
                     };
 
-                    const mobileHeaderCell = row.insertCell();
-                    mobileHeaderCell.colSpan = 9;
-                    mobileHeaderCell.className = 'custom-cell';
-                    mobileHeaderCell.innerHTML = `
+                    // --- Mobile Card Cell (Always included, hidden by CSS on desktop) ---
+                    const mobileCardCell = row.insertCell();
+                    mobileCardCell.colSpan = 9;
+                    mobileCardCell.className = 'mobile-card-cell custom-cell'; // Added mobile-card-cell class for specific CSS targeting
+                    mobileCardCell.innerHTML = `
                         <div class="med-header">
                             <h4>${medicineName || 'New Medicine'}</h4>
                             <span class="status-indicator ${status}">${statusLabel}</span>
                         </div>
                         <div class="med-details">
-                            <td data-label="Dosage" class="custom-cell">
+                            <div data-label="Dosage">
                                 <input type="number" value="${medicineDosage}" data-i="${i}" data-f="dosage" step="0.5">
-                            </td>
-                            <td data-label="Unit" class="custom-cell">
+                            </div>
+                            <div data-label="Unit">
                                 <select data-i="${i}" data-f="unit">
                                     <option ${m.unit=='tablets'?'selected':''}>tablets</option>
                                     <option ${m.unit=='ml'?'selected':''}>ml</option>
@@ -645,24 +691,27 @@
                                     <option ${m.unit=='Teaspoons'?'selected':''}>Teaspoons</option>
                                     <option ${m.unit=='Custom'?'selected':''}>Custom...</option>
                                 </select>
-                            </td>
-                            <td data-label="Taken" class="custom-cell">
+                            </div>
+                            <div data-label="Taken">
                                 <div style="display:flex; align-items:center; gap:10px;">
                                     <input type="checkbox" ${status === 'taken' ? 'checked':''} data-i="${i}" data-f="taken" style="width:20px;">
                                     <button class="missed-btn" data-i="${i}" style="background:${status === 'missed' ? '#f44336' : '#ff9800'}; color:white; padding:5px 10px; font-size:12px; border-radius:3px;">
                                         ${status === 'missed' ? 'MISSED' : 'Mark Missed'}
                                     </button>
                                 </div>
-                            </td>
-                            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                            </div>
                             
-                            <td data-label="Usage" class="custom-cell">
+                            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                            <div data-label="Medicine Name">
+                                <input value="${medicineName}" data-i="${i}" data-f="name">
+                            </div>
+                            <div data-label="Usage">
                                 <textarea data-i="${i}" data-f="usage">${medicineUsage}</textarea>
-                            </td>
-                            <td data-label="Time" class="custom-cell">
+                            </div>
+                            <div data-label="Time">
                                 <input value="${medicineTime}" data-i="${i}" data-f="time" placeholder="Morning">
-                            </td>
-                            <td data-label="When" class="custom-cell">
+                            </div>
+                            <div data-label="When">
                                 <select data-i="${i}" data-f="when">
                                     <option ${m.when=='Before Breakfast'?'selected':''}>Before Breakfast</option>
                                     <option ${m.when=='After Breakfast'?'selected':''}>After Breakfast</option>
@@ -673,18 +722,20 @@
                                     <option ${m.when=='Custom...'?'selected':''}>Custom...</option>
                                 </select>
                                 ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}
-                            </td>
-                            <td data-label="Notes" class="custom-cell">
+                            </div>
+                            <div data-label="Notes">
                                 <textarea data-i="${i}" data-f="notes">${medicineNotes}</textarea>
-                            </td>
-                            <td data-label="Actions" class="custom-cell">
+                            </div>
+                            
+                            <div class="action-row">
                                 <button class="duplicate" data-i="${i}">Copy</button>
                                 <button class="del" data-i="${i}">X</button>
-                            </td>
+                            </div>
                         </div>
                     `;
 
-                    // Desktop Cells
+                    // --- Desktop Cells (Hidden by CSS on Mobile) ---
+                    // These cells must be separate from the mobile card to maintain the desktop table structure
                     row.innerHTML += `
                         <td data-label="Medicine"><input value="${medicineName}" data-i="${i}" data-f="name"></td>
                         <td data-label="Usage"><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${medicineUsage}</textarea></td>
@@ -735,9 +786,8 @@
             updateSummary();
         }
 
-        // --- Event Listeners (MODIFIED to include Filter) ---
+        // --- Event Listeners ---
         
-        // NEW: Filter Status Change Listener
         document.getElementById('filterStatus').addEventListener('change', e => {
             currentFilter = e.target.value;
             render(); 
@@ -801,7 +851,6 @@
             render(); 
         });
         
-        // --- Other Functions (Unchanged) ---
         function updateSummary() {
             const total = meds.length;
             const taken = meds.filter(m => m.taken && m.taken[date] === true).length;
