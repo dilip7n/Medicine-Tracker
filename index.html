@@ -729,10 +729,10 @@
                 } 
             }
             
-            // FIXED: Handle mobile card expansion by targeting the header
+            // **IMPROVED FIX**: Handle mobile card expansion by ensuring the click target is the header or within it.
             const header = e.target.closest('.med-header');
             if (header) {
-                // Ensure we haven't clicked directly on the status indicator which has its own functionality
+                // Ensure the click wasn't on the status indicator itself, which has separate styling/intent
                 if (!e.target.classList.contains('status-indicator')) {
                     const card = header.closest('.mobile-card');
                     if (card) {
@@ -798,7 +798,27 @@
                 group.meds.push(m);
             });
 
+            // Primary sort: by schedule time
             groups.sort((a, b) => a.sortTime - b.sortTime);
+
+            // Secondary sort: within each group, sort by status (pending first) and then by name
+            groups.forEach(group => {
+                group.meds.sort((a, b) => {
+                    const statusA = getStatus(a);
+                    const statusB = getStatus(b);
+
+                    // Status priority: pending (0) < missed (1) < taken (2)
+                    const statusMap = { 'pending': 0, 'missed': 1, 'taken': 2 };
+                    const statusOrder = statusMap[statusA] - statusMap[statusB];
+
+                    if (statusOrder !== 0) {
+                        return statusOrder;
+                    }
+                    // Fallback to alphabetical sort by name
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+            });
+
 
             // 3. Render both Desktop Table and Mobile Grouped List
             groups.forEach(group => {
@@ -829,6 +849,11 @@
                     const option = (val) => `<option value="${val}" ${m.unit==val?'selected':''}>${val}</option>`;
                     const whenOption = (val) => `<option value="${val}" ${m.when==val?'selected':''}>${val}</option>`;
 
+                    // Dynamic Unit/When Input Check (for both desktop and mobile render)
+                    const unitInput = m.unit=='Custom' ? `<input type="text" value="${m.customUnit||''}" data-i="${i}" data-f="customUnit" placeholder="e.g., Vials">` : '';
+                    const whenInput = m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm">` : '';
+
+
                     // 3a. DESKTOP ROW
                     const deskRow = tbody.insertRow();
                     deskRow.className = `med-row ${status === 'taken' ? 'taken-row' : status === 'missed' ? 'missed-row' : ''}`;
@@ -847,7 +872,7 @@
                                 ${option('Teaspoons')}
                                 ${option('Custom')}
                             </select>
-                            ${m.unit=='Custom' ? `<input type="text" value="${m.customUnit||''}" data-i="${i}" data-f="customUnit" placeholder="e.g., Vials" style="margin-top:5px;">` : ''}
+                            ${unitInput ? unitInput.replace('>', ' style="margin-top:5px;">') : ''}
                         </td>
                         <td data-label="Time"><input value="${medicineTime}" data-i="${i}" data-f="time" placeholder="Morning"></td>
                         <td data-label="When">
@@ -860,7 +885,7 @@
                                 ${whenOption('After Dinner')}
                                 ${whenOption('Custom...')}
                             </select>
-                            ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}
+                            ${whenInput ? whenInput.replace('>', ' style="margin-top:5px;">') : ''}
                         </td>
                         <td data-label="Taken">
                             <div style="display:flex; align-items:center; gap:5px; position:relative; z-index: 2;">
@@ -882,8 +907,9 @@
                     // 3b. MOBILE CARD
                     const mobileCard = document.createElement('div');
                     mobileCard.className = `mobile-card ${status === 'taken' ? 'taken-row' : status === 'missed' ? 'missed-row' : ''}`;
+                    mobileCard.dataset.i = i; // Add data-i to the card for easier lookup
                     mobileCard.innerHTML = `
-                        <div class="med-header">
+                        <div class="med-header" data-i="${i}">
                             <h4>${medicineName || 'New Medicine'}</h4>
                             <span class="status-indicator ${status}">${statusLabel}</span>
                         </div>
@@ -903,7 +929,7 @@
                                         ${option('Teaspoons')}
                                         ${option('Custom')}
                                     </select>
-                                    ${m.unit=='Custom' ? `<input type="text" value="${m.customUnit||''}" data-i="${i}" data-f="customUnit" placeholder="e.g., Vials">` : ''}
+                                    ${unitInput}
                                 </div>
                             </div>
                             <div data-label="Time">
@@ -920,7 +946,7 @@
                                         ${whenOption('After Dinner')}
                                         ${whenOption('Custom...')}
                                     </select>
-                                    ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm">` : ''}
+                                    ${whenInput}
                                 </div>
                             </div>
                             <div data-label="Taken">
