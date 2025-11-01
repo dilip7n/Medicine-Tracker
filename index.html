@@ -23,9 +23,9 @@
 
         .controls {
             margin: 20px 0;
-            display: flex; /* Added for mobile wrapping */
-            flex-wrap: wrap; /* Added for mobile wrapping */
-            gap: 10px; /* Added for mobile wrapping */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         button {
@@ -149,12 +149,10 @@
             }
 
             table thead {
-                /* Hide the header, we will use data-labels */
                 display: none;
             }
 
             table tr {
-                /* Stack rows into "cards" */
                 display: block;
                 margin-bottom: 20px;
                 border: 1px solid #ccc;
@@ -163,11 +161,9 @@
             }
 
             table td {
-                /* Stack cells vertically */
                 display: block;
                 padding: 12px;
                 padding-left: 50%;
-                /* Make space for the label */
                 position: relative;
                 text-align: left;
                 border: none;
@@ -178,10 +174,8 @@
                 border-bottom: 0;
             }
 
-            /* Add the data-label as a "header" for each cell */
             table td::before {
                 content: attr(data-label);
-                /* Get text from data-label attribute */
                 position: absolute;
                 left: 10px;
                 width: 40%;
@@ -190,21 +184,19 @@
                 white-space: nowrap;
             }
 
-            /* Adjust inputs to fit this new layout */
             input,
             select,
             textarea {
                 width: 100%;
             }
 
-            /* Fix z-index overlap on mobile */
             td[data-label="Taken"] div {
                 position: relative;
-                z-index: 2; /* Button on top */
+                z-index: 2;
             }
             td[data-label="Notes"] textarea {
                 position: relative;
-                z-index: 1; /* Notes box behind */
+                z-index: 1;
             }
         }
     </style>
@@ -258,10 +250,10 @@
         window.login = login;
         window.signup = signup;
         window.logout = logout;
+        
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
-        // ** ADDED push, update, and remove **
-        import { getDatabase, ref, set, get, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
 
         // Firebase configuration
@@ -282,7 +274,7 @@
 
         let currentUser = null;
 
-        // Authentication functions
+        // Authentication functions are unchanged from the previous, working version
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -349,16 +341,14 @@
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userEmail').textContent = currentUser.email;
-            load(); // Load medicines after login
+            load(); 
         }
 
         // Setup real-time sync listener
         let syncListener = null;
 
-        // ** REWRITTEN setupRealtimeSync **
         function setupRealtimeSync() {
             if (!currentUser) return;
-            // Detach old listener if one exists
             if (syncListener) syncListener(); 
 
             const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
@@ -367,14 +357,14 @@
             statusEl.style.color = 'blue';
 
             syncListener = onValue(medsRef, (snapshot) => {
-                const data = snapshot.val(); // This is an OBJECT { key1: {...}, key2: {...} }
+                const data = snapshot.val(); 
                 const newMedsArray = [];
 
                 if (data) {
                     // Convert the object from Firebase into an array for rendering
                     for (const key in data) {
                         newMedsArray.push({
-                            id: key, // This is the unique Firebase key
+                            id: key, 
                             ...data[key]
                         });
                     }
@@ -382,10 +372,9 @@
 
                 // Only re-render if the data has actually changed
                 if (JSON.stringify(newMedsArray) !== JSON.stringify(meds)) {
-                    console.log('Data updated from Firebase');
                     window.meds = newMedsArray;
                     meds = window.meds;
-                    render(); // Re-render the table with new data
+                    render(); 
 
                     statusEl.textContent = `✅ Synced ${meds.length} medicines`;
                     statusEl.style.color = 'green';
@@ -396,7 +385,6 @@
                      setTimeout(() => statusEl.textContent = '', 2000);
                 }
                 
-                // Check for localStorage migration *after* first load
                 migrateFromLocalStorage(); 
 
             }, (error) => {
@@ -407,7 +395,7 @@
         }
         
         function disableRealtimeSync() {
-             if (syncListener) syncListener(); // Detach the listener
+             if (syncListener) syncListener(); 
              syncListener = null;
         }
 
@@ -426,16 +414,8 @@
         if (!window.meds) window.meds = [];
         let meds = window.meds;
         let date = new Date().toISOString().split('T')[0];
-
-        // --- Removed Undo/Redo functionality ---
-        // (saveState, undo, redo, updateUndoRedoButtons, undoStack, redoStack)
-        // This feature is not compatible with the new real-time data model
-        // and was a source of data corruption.
         
         document.getElementById('date').value = date;
-
-        // --- Removed save() function ---
-        // We now save individual items via event listeners
 
         function createStatusElement() {
             const statusEl = document.createElement('div');
@@ -445,36 +425,28 @@
             return statusEl;
         }
 
-        // ** MODIFIED load() function **
-        // This function now ONLY sets up the listener.
         function load() {
             if (!currentUser) {
                 return;
             }
-            // Enable real-time sync
             setupRealtimeSync();
         }
 
-        // ** MODIFIED migrateFromLocalStorage **
-        // Now uses push() to safely add old data to Firebase
         function migrateFromLocalStorage() {
             try {
                 const localData = localStorage.getItem('medicines');
                 if (localData) {
                     const oldMeds = JSON.parse(localData);
-                    // Check if firebase is empty (meds.length) and local has data
                     if (oldMeds && oldMeds.length > 0 && meds.length === 0) {
                         console.log('Migrating', oldMeds.length, 'medicines from localStorage to Firebase...');
                         const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
                         
-                        // Use a loop to PUSH each item, creating unique IDs
                         oldMeds.forEach(med => {
-                            // Create a new ref with a unique ID for each
                             const newMedRef = push(medsRef);
-                            set(newMedRef, med); // Use set on the *new* ref
+                            set(newMedRef, med); 
                         });
 
-                        localStorage.removeItem('medicines'); // Clear localStorage after successful migration
+                        localStorage.removeItem('medicines'); 
                         const statusEl = document.getElementById('status') || createStatusElement();
                         statusEl.textContent = `🔥 Migrated ${oldMeds.length} medicines to Firebase!`;
                         statusEl.style.color = 'green';
@@ -487,44 +459,37 @@
         }
 
         function parseTime(timeStr) {
-            // Parse time like "4pm", "12:30pm", "16:00" to minutes since midnight
             if (!timeStr) return 0;
             const lower = timeStr.toLowerCase().trim();
-            let hours = 0,
-                minutes = 0;
-
+            let hours = 0, minutes = 0;
             const match = lower.match(/(\d+):?(\d*)\s*(am|pm)?/);
             if (match) {
                 hours = parseInt(match[1]);
                 minutes = match[2] ? parseInt(match[2]) : 0;
                 const meridiem = match[3];
-
                 if (meridiem === 'pm' && hours !== 12) hours += 12;
                 if (meridiem === 'am' && hours === 12) hours = 0;
             }
-
             return hours * 60 + minutes;
         }
 
         function getScheduleTime(when) {
-            // Return approximate time in minutes for standard schedules
             const times = {
-                'Before Breakfast': 7 * 60, // 7:00 AM
-                'After Breakfast': 9 * 60, // 9:00 AM
-                'Before Lunch': 12 * 60, // 12:00 PM
-                'After Lunch': 14 * 60, // 2:00 PM
-                'Before Dinner': 19 * 60, // 7:00 PM
-                'After Dinner': 21 * 60 // 9:00 PM
+                'Before Breakfast': 7 * 60, 
+                'After Breakfast': 9 * 60, 
+                'Before Lunch': 12 * 60, 
+                'After Lunch': 14 * 60, 
+                'Before Dinner': 19 * 60, 
+                'After Dinner': 21 * 60 
             };
             return times[when] || 0;
         }
 
-        // ** MODIFIED render() function **
+        // ** RENDER FUNCTION FIXES **
         function render() {
             const tbody = document.getElementById('list');
             tbody.innerHTML = '';
 
-            // Create groups for medicines
             const groups = [];
 
             meds.forEach(m => {
@@ -550,31 +515,36 @@
                 group.meds.push(m);
             });
 
-            // Sort groups by time
             groups.sort((a, b) => a.sortTime - b.sortTime);
 
-            // Render each group
             groups.forEach(group => {
-                // Add schedule header
                 const headerRow = tbody.insertRow();
                 headerRow.className = 'schedule-header';
                 headerRow.innerHTML = `<td colspan="9">${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})</td>`;
 
-                // Add medicines for this group
                 group.meds.forEach(m => {
-                    // ** USE m.id (Firebase key) instead of array index **
-                    const i = m.id;
+                    // This is the Firebase ID, which acts as the row key
+                    const i = m.id; 
+                    
+                    // Added default checks to prevent 'undefined' errors
+                    const medicineName = m.name || '';
+                    const medicineUsage = m.usage || '';
+                    const medicineDosage = m.dosage === undefined ? '' : m.dosage;
+                    const medicineTime = m.time || '';
+                    const medicineNotes = m.notes || '';
+
                     const row = tbody.insertRow();
-                    if (m.taken[date] === true) {
+                    if (m.taken && m.taken[date] === true) {
                         row.className = 'taken-row';
-                    } else if (m.taken[date] === 'missed') {
+                    } else if (m.taken && m.taken[date] === 'missed') {
                         row.className = 'missed-row';
                     }
-                    // ** ADDED data-label attributes for mobile CSS **
+                    
+                    // Ensured all values are correctly bound and used 'i' for data-i
                     row.innerHTML = `
-                        <td data-label="Medicine"><input value="${m.name}" data-i="${i}" data-f="name"></td>
-                        <td data-label="Usage"><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${m.usage}</textarea></td>
-                        <td data-label="Dosage"><input type="number" value="${m.dosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
+                        <td data-label="Medicine"><input value="${medicineName}" data-i="${i}" data-f="name"></td>
+                        <td data-label="Usage"><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${medicineUsage}</textarea></td>
+                        <td data-label="Dosage"><input type="number" value="${medicineDosage}" data-i="${i}" data-f="dosage" step="0.5"></td>
                         <td data-label="Unit"><select data-i="${i}" data-f="unit">
                             <option ${m.unit=='tablets'?'selected':''}>tablets</option>
                             <option ${m.unit=='ml'?'selected':''}>ml</option>
@@ -585,7 +555,7 @@
                             <option ${m.unit=='Teaspoons'?'selected':''}>Teaspoons</option>
                             <option ${m.unit=='Custom'?'selected':''}>Custom...</option>
                         </select></td>
-                        <td data-label="Time"><input value="${m.time}" data-i="${i}" data-f="time" placeholder="Morning"></td>
+                        <td data-label="Time"><input value="${medicineTime}" data-i="${i}" data-f="time" placeholder="Morning"></td>
                         <td data-label="When"><select data-i="${i}" data-f="when">
                             <option ${m.when=='Before Breakfast'?'selected':''}>Before Breakfast</option>
                             <option ${m.when=='After Breakfast'?'selected':''}>After Breakfast</option>
@@ -598,14 +568,14 @@
                         ${m.when=='Custom...' ? `<input type="text" value="${m.customWhen||''}" data-i="${i}" data-f="customWhen" placeholder="e.g., 4pm, 12:30pm" style="margin-top:5px;">` : ''}</td>
                         <td data-label="Taken">
                             <div style="display:flex; align-items:center; gap:5px; position:relative; z-index: 2;">
-                                <input type="checkbox" ${m.taken[date] === true ?'checked':''} data-i="${i}" data-f="taken" style="margin:0;">
-                                <button class="missed-btn" data-i="${i}" style="background:${m.taken[date] === 'missed' ? '#f44336' : '#ff9800'}; color:white; border:none; padding:2px 6px; font-size:10px; cursor:pointer; border-radius:3px;">
-                                    ${m.taken[date] === 'missed' ? 'MISSED' : 'Miss'}
+                                <input type="checkbox" ${m.taken && m.taken[date] === true ?'checked':''} data-i="${i}" data-f="taken" style="margin:0;">
+                                <button class="missed-btn" data-i="${i}" style="background:${m.taken && m.taken[date] === 'missed' ? '#f44336' : '#ff9800'}; color:white; border:none; padding:2px 6px; font-size:10px; cursor:pointer; border-radius:3px;">
+                                    ${m.taken && m.taken[date] === 'missed' ? 'MISSED' : 'Miss'}
                                 </button>
                             </div>
                         </td>
                         <td data-label="Notes">
-                            <textarea data-i="${i}" data-f="notes" style="position:relative; z-index: 1;">${m.notes||''}</textarea>
+                            <textarea data-i="${i}" data-f="notes" style="position:relative; z-index: 1;">${medicineNotes}</textarea>
                         </td>
                         <td data-label="Actions">
                             <button class="duplicate" data-i="${i}">Copy</button>
@@ -616,11 +586,13 @@
             });
             updateSummary();
         }
+        // End of RENDER FUNCTION FIXES
 
         function updateSummary() {
+            // Updated filter logic to safely check for 'taken' object
             const total = meds.length;
-            const taken = meds.filter(m => m.taken[date] === true).length;
-            const missed = meds.filter(m => m.taken[date] === 'missed').length;
+            const taken = meds.filter(m => m.taken && m.taken[date] === true).length;
+            const missed = meds.filter(m => m.taken && m.taken[date] === 'missed').length;
             const pending = total - taken - missed;
             const pct = total ? Math.round(taken / total * 100) : 0;
             document.getElementById('summary').innerHTML = `
@@ -632,89 +604,64 @@
             `;
         }
 
-        // ** MODIFIED 'change' listener **
-        // Now uses update() and set/remove for individual fields
+        // Event listeners are unchanged from the previous, working version
         document.getElementById('list').addEventListener('change', e => {
-            const medId = e.target.dataset.i; // This is now the Firebase key
+            const medId = e.target.dataset.i; 
             const field = e.target.dataset.f;
 
             if (medId && field) {
-                // No saveState()
                 const medRef = ref(db, `users/${currentUser.uid}/medicines/${medId}`);
 
                 if (field === 'taken') {
                     const isChecked = e.target.checked;
-                    // Path to the specific date in the 'taken' object
                     const takenDateRef = ref(db, `users/${currentUser.uid}/medicines/${medId}/taken/${date}`);
 
                     if (isChecked) {
-                        set(takenDateRef, true); // Use set to add the date key
+                        set(takenDateRef, true); 
                     } else {
-                        remove(takenDateRef); // Use remove to delete the date key
+                        remove(takenDateRef); 
                     }
-                    // No render() call needed! The onValue listener handles it.
-
                 } else {
-                    // Use update() to change a single field
                     update(medRef, {
                         [field]: e.target.value
                     }).catch(err => console.error('Update failed: ', err));
-
-                    // If 'when' changed, the onValue listener will auto-render and re-group.
                 }
-                
-                // No save() or updateSummary() needed here. onValue handles it.
             }
         });
 
-        // ** MODIFIED 'click' listener **
-        // Now uses remove(), push(), and set/remove for actions
         document.getElementById('list').addEventListener('click', e => {
-            const medId = e.target.dataset.i; // This is the Firebase ID
+            const medId = e.target.dataset.i; 
 
             if (e.target.classList.contains('del')) {
                 if (confirm('Delete?')) {
-                    // No saveState()
                     const medRef = ref(db, 'users/' + currentUser.uid + '/medicines/' + medId);
-                    remove(medRef); // This is the new delete
-                    // No save() or render()
+                    remove(medRef); 
                 }
             } else if (e.target.classList.contains('duplicate')) {
-                // No saveState()
-                
-                // Find the med data from our local array
                 const originalMed = meds.find(m => m.id === medId);
                 if (!originalMed) return;
 
                 const duplicate = JSON.parse(JSON.stringify(originalMed));
                 duplicate.name += ' (Copy)';
-                delete duplicate.id; // Remove the ID so Firebase generates a new one
+                delete duplicate.id; 
 
                 const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
-                push(medsRef, duplicate); // Add the copy
-                // No save() or render()
+                push(medsRef, duplicate); 
 
             } else if (e.target.classList.contains('missed-btn')) {
                 const takenDateRef = ref(db, `users/${currentUser.uid}/medicines/${medId}/taken/${date}`);
-
-                // Find the current med in the local array to check its status
                 const currentMed = meds.find(m => m.id === medId);
-                // Use optional chaining for safety
                 const currentStatus = currentMed?.taken?.[date]; 
 
                 if (currentStatus === 'missed') {
-                    remove(takenDateRef); // Reset to pending (deletes the key)
+                    remove(takenDateRef); 
                 } else {
-                    set(takenDateRef, 'missed'); // Mark as missed
+                    set(takenDateRef, 'missed'); 
                 }
-                // No save() or render()
             }
         });
 
-        // ** MODIFIED 'addBtn' listener **
-        // Now uses push() to create a new item
         document.getElementById('addBtn').addEventListener('click', () => {
-            // No saveState()
             const newMed = {
                 name: '',
                 usage: '',
@@ -727,7 +674,6 @@
                 notes: ''
             };
 
-            // Use push() to add the new medicine to Firebase
             const medsRef = ref(db, 'users/' + currentUser.uid + '/medicines');
             push(medsRef, newMed)
                 .then(() => {
@@ -736,33 +682,23 @@
                 .catch(err => {
                     console.error('Failed to add medicine: ', err);
                 });
-            
-            // No need to call save() or render(). The onValue listener will do it automatically.
         });
-        
-        // Removed undoBtn and redoBtn listeners
 
         document.getElementById('date').addEventListener('change', e => {
             date = e.target.value;
-            render(); // Re-render with the new date
+            render(); 
         });
 
-        // ** MODIFIED 'clearBtn' listener **
-        // Now sends a single multi-path update to Firebase
         document.getElementById('clearBtn').addEventListener('click', () => {
             if (confirm(`Clear all taken/missed status for ${date}?`)) {
-                // Create a list of all updates to send to Firebase
                 const updates = {};
                 
                 meds.forEach(m => {
-                    // Check if an entry for this date exists
                     if (m.taken && m.taken[date] !== undefined) {
-                        // Prepare to set this path to 'null' to delete it
                         updates[`users/${currentUser.uid}/medicines/${m.id}/taken/${date}`] = null;
                     }
                 });
 
-                // Send all updates at once using a single update() call on the root ref
                 if (Object.keys(updates).length > 0) {
                     update(ref(db), updates)
                         .then(() => {
@@ -772,15 +708,15 @@
                             console.error('Failed to clear statuses: ', err);
                         });
                 }
-                // No save() or render() needed
             }
         });
 
         document.getElementById('exportBtn').addEventListener('click', () => {
             let csv = 'Medicine,Usage,Dosage,Unit,Time,When,Taken,Notes\n';
             meds.forEach(m => {
-                const status = m.taken[date] === true ? 'Taken' : m.taken[date] === 'missed' ? 'Missed' : 'Pending';
-                csv += `"${m.name}","${m.usage}","${m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
+                // Ensure m.taken exists before checking its properties
+                const status = m.taken && m.taken[date] === true ? 'Taken' : m.taken && m.taken[date] === 'missed' ? 'Missed' : 'Pending';
+                csv += `"${m.name}","${m.dosage === undefined ? '' : m.dosage}","${m.unit}","${m.time}","${m.when}","${status}","${m.notes||''}"\n`;
             });
             const blob = new Blob([csv], {
                 type: 'text/csv'
@@ -790,9 +726,6 @@
             a.download = `meds-${date}.csv`;
             a.click();
         });
-
-        // Don't auto-load - wait for authentication
-        // load() will be called from showApp() after login
     </script>
 </body>
 </html>
