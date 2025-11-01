@@ -133,24 +133,47 @@
         td.mobile-card-cell {
             display: none; 
         }
+        
+        /* NEW: Container for the schedule headers on mobile (rendered below) */
+        .mobile-group-header {
+            display: none; /* Hide on desktop */
+            background: #e0f2f1;
+            padding: 10px;
+            margin: 15px 0 5px 0;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 4px;
+        }
 
         /* --- MOBILE RESPONSIVE FIXES: Collapsible Cards --- */
         @media (max-width: 768px) {
             table {
                 border: 0;
+                /* Remove top margin on mobile, relying on group headers for spacing */
+                margin-top: 0; 
             }
 
             table thead {
                 display: none;
             }
             
-            /* FIX: Hide all standard table cells on Mobile */
+            /* Show the mobile group header */
+            .mobile-group-header {
+                display: block; 
+            }
+            
+            /* Hide the desktop group header row */
+            table tr.schedule-header {
+                display: none; 
+            }
+            
+            /* Hide all standard table cells on Mobile */
             table td:not(.mobile-card-cell) {
                 display: none !important; 
                 padding: 0;
             }
             
-            /* FIX: Show the mobile card cell on Mobile */
+            /* Show the mobile card cell on Mobile */
             table td.mobile-card-cell {
                 display: block !important;
                 padding: 0;
@@ -160,7 +183,7 @@
             /* Container for each medicine item (the card) */
             table tr.med-row {
                 display: block;
-                margin-bottom: 15px;
+                margin-bottom: 10px; /* Reduced margin for tighter grouping */
                 border: 1px solid #ccc;
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -238,19 +261,6 @@
             
             .med-details .action-row::before {
                 content: none;
-            }
-
-            table tr.schedule-header {
-                display: block;
-                margin-bottom: 5px;
-                border: none;
-                box-shadow: none;
-            }
-            table tr.schedule-header td {
-                display: block;
-                padding: 10px;
-                text-align: center;
-                border-radius: 5px;
             }
             
             .controls {
@@ -330,6 +340,9 @@
         </div>
     </div>
     <div id="summary" style="background:#f9f9f9; padding:10px; margin:10px 0;"></div>
+    
+    <div id="mobileGroupList"></div>
+    
     <table id="medsTable">
         <thead>
             <tr>
@@ -603,10 +616,12 @@
             return 'pending';
         }
 
-        // --- Render Function ---
+        // --- Render Function (Modified for Mobile Grouping) ---
         function render() {
             const tbody = document.getElementById('list');
+            const mobileGroupContainer = document.getElementById('mobileGroupList');
             tbody.innerHTML = '';
+            mobileGroupContainer.innerHTML = ''; // Clear mobile headers
 
             // 1. Filter the medicines based on the current selection
             const filteredMeds = meds.filter(m => {
@@ -647,6 +662,14 @@
 
             // 3. Render the groups and rows
             groups.forEach(group => {
+                
+                // --- Mobile Group Header (Rendered outside the table) ---
+                const mobileHeader = document.createElement('div');
+                mobileHeader.className = 'mobile-group-header';
+                mobileHeader.innerHTML = `${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})`;
+                mobileGroupContainer.appendChild(mobileHeader);
+                
+                // --- Desktop Group Header (Rendered inside the table) ---
                 const headerRow = tbody.insertRow();
                 headerRow.className = 'schedule-header';
                 headerRow.innerHTML = `<td colspan="9" class="custom-cell">${group.name} (${group.meds.length} ${group.meds.length === 1 ? 'medicine' : 'medicines'})</td>`;
@@ -669,7 +692,7 @@
                         }
                     };
 
-                    // --- Mobile Card Cell (Only visible on mobile due to CSS fix) ---
+                    // --- Mobile Card Cell (Only visible on mobile) ---
                     const mobileCardCell = row.insertCell();
                     mobileCardCell.colSpan = 9;
                     mobileCardCell.className = 'mobile-card-cell'; 
@@ -736,8 +759,7 @@
                         </div>
                     `;
 
-                    // --- Desktop Cells (Only visible on desktop due to CSS fix) ---
-                    // These cells must be separate from the mobile card to maintain the desktop table structure
+                    // --- Desktop Cells (Only visible on desktop) ---
                     row.innerHTML += `
                         <td data-label="Medicine"><input value="${medicineName}" data-i="${i}" data-f="name"></td>
                         <td data-label="Usage"><textarea data-i="${i}" data-f="usage" style="min-height:60px;">${medicineUsage}</textarea></td>
