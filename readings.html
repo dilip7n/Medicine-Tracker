@@ -450,6 +450,7 @@
             if (!currentUser) return;
             if (syncListener) syncListener(); 
 
+            // CRITICAL CHECK: Ensure the path is correct: users/UID/healthReadings
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
 
             syncListener = onValue(readingsRef, (snapshot) => {
@@ -472,21 +473,30 @@
                     const dateB = new Date(b.date + ' ' + (b.time || '00:00'));
                     return dateB - dateA;
                 });
+                
+                // --- DEBUGGING STEP ---
+                console.log('--- Firebase Sync Result ---');
+                console.log('Readings Fetched Count:', allReadings.length);
+                if (allReadings.length > 0) {
+                     console.log('Sample Reading:', allReadings[0]);
+                     console.log('Detected Persons:', Array.from(personNames));
+                }
+                console.log('--------------------------');
+                // ------------------------
 
-                // **CRITICAL FIX: Ensure dropdown state is correct before rendering tables**
+                // Update person dropdown state
                 if (allReadings.length > 0 && !currentPerson) {
-                    // Set currentPerson to the first person found if none is set
                     currentPerson = allReadings[0].person; 
-                    updatePersonDropdown(true); // Force select the first person
+                    updatePersonDropdown(true); 
                 } else {
                     updatePersonDropdown();
                 }
                 
-                // Call the main display function after data sync and initialization
+                // CRITICAL STEP: Call the main display function after data sync and initialization
                 loadReadings(); 
 
             }, (error) => {
-                console.error('Real-time sync error:', error);
+                console.error('Real-time sync error: Failed to read from database.', error);
             });
         }
         
@@ -664,6 +674,9 @@
             // Group all readings by person
             const readingsByPerson = {};
             allReadings.forEach(r => {
+                // IMPORTANT: Only process readings that actually have a person field
+                if (!r.person) return; 
+                
                 if (!readingsByPerson[r.person]) {
                     readingsByPerson[r.person] = [];
                 }
@@ -868,6 +881,7 @@
             const latestReadingPerDay = {}; // Key: "Date_PersonName" -> Value: Reading Object
 
             allReadings.forEach(r => {
+                if (!r.person) return; // Skip if person field is missing
                 const key = `${r.date}_${r.person}`;
                 // Only keep the latest reading of the day
                 if (!latestReadingPerDay[key] || r.timestamp > latestReadingPerDay[key].timestamp) {
