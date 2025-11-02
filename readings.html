@@ -97,6 +97,12 @@
             color: white;
         }
         
+        .export-btn {
+            background: #007bff; /* Blue for export */
+            color: white;
+            margin-top: 15px;
+        }
+
         .logout-btn {
             background: #f44336;
             color: white;
@@ -262,6 +268,9 @@
             </div>
             
             <button class="add" onclick="addReading()">Add Reading</button>
+            
+            <button class="export-btn" onclick="exportFullHistory()">⬇️ Download Full History (CSV)</button>
+
         </div>
         
         <div id="todayAveragesContainer">
@@ -290,21 +299,22 @@
         window.addReading = addReading;
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
+        window.exportFullHistory = exportFullHistory; // New Export function
 
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
         import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
 
-        // 2. Your web app's Firebase configuration (UPDATED)
+        // Your web app's Firebase configuration (CONFIRMED)
         const firebaseConfig = {
-            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY", // UPDATED
-            authDomain: "medicine-tracker-b90f2.firebaseapp.com", // UPDATED
-            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com", // UPDATED
-            projectId: "medicine-tracker-b90f2", // UPDATED
-            storageBucket: "medicine-tracker-b90f2.firebasestorage.app", // UPDATED
-            messagingSenderId: "230127910329", // UPDATED
-            appId: "1:230127910329:web:756789fcd3a1ac02948a68" // UPDATED
+            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY",
+            authDomain: "medicine-tracker-b90f2.firebaseapp.com",
+            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
+            projectId: "medicine-tracker-b90f2",
+            storageBucket: "medicine-tracker-b90f2.firebasestorage.app",
+            messagingSenderId: "230127910329",
+            appId: "1:230127910329:web:756789fcd3a1ac02948a68"
         };
 
         // Initialize Firebase
@@ -469,7 +479,7 @@
                     updatePersonDropdown(true);
                 }
                 
-                // CRITICAL: Call the main display function after data sync
+                // CRITICAL FIX: Call the main display function after data sync
                 loadReadings(); 
 
             }, (error) => {
@@ -586,7 +596,7 @@
                 timestamp: Date.now()
             };
 
-            // 3. Save to Firebase (Fixes button not working if config was the issue)
+            // 3. Save to Firebase 
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
             
             push(readingsRef, newReading) 
@@ -600,6 +610,7 @@
                     const now = new Date();
                     document.getElementById('recordDate').value = now.toISOString().split('T')[0];
                     document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5); 
+                    // No need to call loadReadings() here, as setupRealtimeSync handles the refresh via onValue listener
                 })
                 .catch(err => alert('Failed to save reading: ' + err.message));
         }
@@ -614,8 +625,8 @@
 
         // --- MAIN DISPLAY FUNCTION (Calls all table generators) ---
         function loadReadings() {
-            if (!currentUser || personNames.size === 0) {
-                // Clear all tables and show empty state if no data
+            // Check for initial empty state
+            if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
                 document.getElementById('detailedHistoryContainer').innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2>${emptyMessage}`;
@@ -640,7 +651,7 @@
         function calculateAndDisplayTables() {
             const metrics = ['systole', 'diastole', 'glucose', 'weight'];
             const allPersonAverages = {};
-            const allPersonTodayReadings = {}; // Store raw readings for today's table
+            const allPersonTodayReadings = {}; 
             
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -699,19 +710,30 @@
             return `<span class="avg-reading">${data.avg.toFixed(1)}</span> <span style="font-size:0.8em; color:#555;">(${data.count} R)</span>`;
         };
         
-        // --- DISPLAY 1: Today's Individual Readings Table (CORRECTED) ---
+        // --- DISPLAY 1: Today's Individual Readings Table ---
         function displayTodayReadings(allPersonTodayReadings) {
             const container = document.getElementById('todayAveragesContainer');
             const personsWithData = Object.keys(allPersonTodayReadings);
             
-            // 3. Fix: Dynamically set the header with the correctly formatted date
-            container.querySelector('h2').textContent = `☀️ Today's Individual Readings (${formatDate(todayDateString)})`;
+            // Always set the header first, then check for data
+            let contentHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>`;
 
             if (personsWithData.length === 0) {
-                container.innerHTML += `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
+                container.innerHTML = contentHTML + `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
                 return;
             }
             
+            // Collect all unique times for today across all people
+            const allTimes = new Set();
+            personsWithData.forEach(person => {
+                allPersonTodayReadings[person].forEach(r => {
+                    allTimes.add(r.time);
+                });
+            });
+            
+            // Sort times chronologically
+            const sortedTimes = Array.from(allTimes).sort();
+
             let tableHTML = `
                 <table class="data-table">
                     <thead>
@@ -724,17 +746,6 @@
                     </thead>
                     <tbody>
             `;
-
-            // Collect all unique times for today across all people
-            const allTimes = new Set();
-            personsWithData.forEach(person => {
-                allPersonTodayReadings[person].forEach(r => {
-                    allTimes.add(r.time);
-                });
-            });
-            
-            // Sort times chronologically
-            const sortedTimes = Array.from(allTimes).sort();
 
             sortedTimes.forEach(time => {
                 tableHTML += `<tr><th>${time}</th>`;
@@ -766,8 +777,8 @@
             });
 
             tableHTML += `</tbody></table>`;
-            // Preserve the H2 tag and append the table
-            container.innerHTML = container.querySelector('h2').outerHTML + tableHTML;
+            // Set the container content completely
+            container.innerHTML = contentHTML + tableHTML;
         }
 
 
@@ -868,7 +879,7 @@
                 <h2>📅 Detailed 30-Day Reading History</h2>
                 <p style="text-align: center; font-style: italic; color: #555;">
                     Showing the **latest reading per day** for each person across the last 30 days. 
-                    For a full export, please use the export feature (to be implemented).
+                    For a full export, please use the download button above.
                 </p>
                 <table class="data-table">
                     <thead>
@@ -919,6 +930,53 @@
 
             tableHTML += `</tbody></table>`;
             container.innerHTML = tableHTML;
+        }
+
+        // --- NEW: EXPORT FUNCTIONALITY (CSV/Excel) ---
+        function exportFullHistory() {
+            if (allReadings.length === 0) {
+                alert("No history data available to export.");
+                return;
+            }
+
+            // 1. Prepare CSV Header
+            let csvContent = "Date,Time,Person,Systolic (mmHg),Diastolic (mmHg),Glucose (mg/dL),Weight (kg/lbs)\n";
+
+            // 2. Sort readings by date/time ascending for logical export order
+            const sortedForExport = [...allReadings].sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + (a.time || '00:00'));
+                const dateB = new Date(b.date + ' ' + (b.time || '00:00'));
+                return dateA - dateB; // Ascending sort
+            });
+            
+            // 3. Populate CSV Rows
+            sortedForExport.forEach(r => {
+                const date = r.date || '';
+                const time = r.time || '';
+                const person = r.person || '';
+                // Ensure null values are represented as empty strings in CSV
+                const systole = r.systole !== null && r.systole !== undefined ? r.systole : '';
+                const diastole = r.diastole !== null && r.diastole !== undefined ? r.diastole : '';
+                const glucose = r.glucose !== null && r.glucose !== undefined ? r.glucose : '';
+                const weight = r.weight !== null && r.weight !== undefined ? r.weight : '';
+
+                csvContent += `${date},${time},"${person}",${systole},${diastole},${glucose},${weight}\n`;
+            });
+
+            // 4. Create and trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            
+            const timestamp = new Date().toISOString().slice(0, 10);
+            link.setAttribute('download', `Health_Readings_Export_${timestamp}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('Successfully generated CSV file for download.');
         }
 
     </script>
