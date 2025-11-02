@@ -131,44 +131,55 @@
             padding-left: 10px;
         }
 
-        /* Reading List */
+        /* Reading List TABLE STYLES (NEW) */
         #readingList {
             margin-top: 30px;
+            overflow-x: auto;
         }
-        
-        .reading-card {
+
+        #readingTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
             background: white;
-            margin-bottom: 15px;
-            padding: 15px;
-            border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #4CAF50;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
-        .reading-card-content {
-            flex-grow: 1;
+        #readingTable th, #readingTable td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+            font-size: 0.95em;
         }
 
-        .reading-card-content strong {
-            display: block;
-            font-size: 1.1em;
+        #readingTable th {
+            background-color: #f0f0f0;
             color: #333;
+            font-weight: bold;
+            white-space: nowrap;
         }
 
-        .reading-card-content span {
-            color: #777;
-            font-size: 0.9em;
+        #readingTable tr:nth-child(even) {
+            background-color: #f9f9f9;
         }
 
-        .reading-card-actions button {
+        #readingTable tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .delete-btn {
             background: #f44336;
             color: white;
-            padding: 5px 10px;
-            margin-left: 10px;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #d32f2f;
         }
 
         /* Auth Styles */
@@ -181,17 +192,16 @@
         /* Navigation Link Style */
         .nav-link {
             text-decoration: none;
-            color: #1a4f78;
+            color: white;
             font-weight: bold;
             margin-left: 15px;
-            padding: 5px 10px;
-            border: 1px solid #ccc;
+            padding: 8px 12px;
             border-radius: 4px;
-            background: #eee;
+            background: #2196F3;
             transition: background 0.2s;
         }
         .nav-link:hover {
-            background: #ddd;
+            background: #0d47a1;
         }
     </style>
 </head>
@@ -332,7 +342,7 @@
         document.getElementById('recordDate').value = today.toISOString().split('T')[0];
         document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); // Set default time
 
-        // --- UTILITY: Date Formatting (FIXED for DD-MMM-YY) ---
+        // --- UTILITY: Date Formatting (DD-MMM-YY) ---
         function formatDate(dateString) {
             if (!dateString) return '';
             // Use 'T00:00:00' to ensure correct date interpretation, preventing timezone issues
@@ -467,7 +477,7 @@
                         }
                     }
                 }
-                // Sort by date and then time (if time is available) descending
+                // Sort by date and then time descending
                 allReadings.sort((a, b) => {
                     const dateA = new Date(a.date + ' ' + (a.time || '00:00'));
                     const dateB = new Date(b.date + ' ' + (b.time || '00:00'));
@@ -487,7 +497,7 @@
             });
         }
         
-        // --- PERSON MANAGEMENT (FIXED logic for custom name) ---
+        // --- PERSON MANAGEMENT ---
         function updatePersonDropdown(forceSelect = false) {
             const select = document.getElementById('personSelect');
             const customInput = document.getElementById('personCustomInput');
@@ -561,7 +571,7 @@
         }
         
 
-        // --- CORE CRUD & UI LOGIC (Updated to include Time) ---
+        // --- CORE CRUD & UI LOGIC ---
 
         function addReading() {
             if (!currentUser || !currentPerson) {
@@ -570,13 +580,13 @@
             }
             
             const date = document.getElementById('recordDate').value;
-            const time = document.getElementById('recordTime').value; // Get time value
+            const time = document.getElementById('recordTime').value;
             const systole = parseFloat(document.getElementById('systole').value);
             const diastole = parseFloat(document.getElementById('diastole').value);
             const glucose = parseFloat(document.getElementById('glucose').value);
             const weight = parseFloat(document.getElementById('weight').value);
             
-            if (!date || !time) { // Check for time as well
+            if (!date || !time) {
                 alert("Please enter both date and time.");
                 return;
             }
@@ -586,8 +596,8 @@
             }
 
             const newReading = {
-                date: date, // YYYY-MM-DD format for storage/sorting
-                time: time, // HH:MM format for storage/sorting
+                date: date,
+                time: time,
                 person: currentPerson,
                 systole: isNaN(systole) ? null : systole,
                 diastole: isNaN(diastole) ? null : diastole,
@@ -620,15 +630,15 @@
             }
         }
 
-        // --- loadReadings (FIXED date display and confirmed person-wise filtering) ---
+        // --- loadReadings (UPDATED to display data in a Table) ---
         function loadReadings() {
             const listEl = document.getElementById('readingList');
             const personNameEl = document.getElementById('currentPersonName');
-            listEl.innerHTML = '';
+            listEl.innerHTML = '<h2>Reading History</h2>'; // Reset the content
             
             if (!currentPerson) {
                 personNameEl.textContent = '...';
-                listEl.innerHTML = '<p style="text-align:center; color:#777;">Please select or add a person to view readings and averages.</p>';
+                listEl.innerHTML += '<p style="text-align:center; color:#777;">Please select or add a person to view readings and averages.</p>';
                 document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
                 document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
                 document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
@@ -637,43 +647,57 @@
 
             personNameEl.textContent = currentPerson;
 
-            // Filters readings based on currentPerson (Ensures bifurcation)
             const personReadings = allReadings.filter(r => r.person === currentPerson);
             
             if (personReadings.length === 0) {
-                 listEl.innerHTML = `<p style="text-align:center; color:#777;">No readings found for ${currentPerson}. Add one above!</p>`;
+                 listEl.innerHTML += `<p style="text-align:center; color:#777;">No readings found for ${currentPerson}. Add one above!</p>`;
                  document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
                  document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
                  document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
                  return;
             }
 
+            // Create the Table structure
+            let tableHTML = `
+                <table id="readingTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>BP (Sys/Dia)</th>
+                            <th>Glucose (mg/dL)</th>
+                            <th>Weight (kg/lbs)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
             personReadings.forEach(r => {
-                const bp = (r.systole && r.diastole) ? `${r.systole}/${r.diastole} mmHg` : '';
-                const glucose = r.glucose ? `Glucose: ${r.glucose} mg/dL` : '';
-                const weight = r.weight ? `Weight: ${r.weight} kg/lbs` : '';
-
                 const formattedDate = formatDate(r.date); 
-                const timeInfo = r.time ? ` @ ${r.time}` : ''; 
+                const bp = r.systole && r.diastole ? `${r.systole}/${r.diastole}` : '';
+                const glucose = r.glucose ? r.glucose.toFixed(1) : '';
+                const weight = r.weight ? r.weight.toFixed(1) : '';
 
-                const card = document.createElement('div');
-                card.className = 'reading-card';
-                card.innerHTML = `
-                    <div class="reading-card-content">
-                        <strong>${formattedDate}${timeInfo}</strong>
-                        <span>${[bp, glucose, weight].filter(Boolean).join(' | ')}</span>
-                    </div>
-                    <div class="reading-card-actions">
-                        <button class="del" onclick="deleteReading('${r.id}')">Delete</button>
-                    </div>
+                tableHTML += `
+                    <tr>
+                        <td data-label="Date">${formattedDate}</td>
+                        <td data-label="Time">${r.time || ''}</td>
+                        <td data-label="BP">${bp}</td>
+                        <td data-label="Glucose">${glucose}</td>
+                        <td data-label="Weight">${weight}</td>
+                        <td data-label="Actions"><button class="delete-btn" onclick="deleteReading('${r.id}')">Delete</button></td>
+                    </tr>
                 `;
-                listEl.appendChild(card);
             });
+
+            tableHTML += `</tbody></table>`;
+            listEl.innerHTML += tableHTML;
             
             calculateAverages(personReadings);
         }
         
-        // --- CALCULATION LOGIC (Day, Week, Month, All Time) ---
+        // --- CALCULATION LOGIC ---
         function calculateAverages(readings) {
             const metrics = ['systole', 'diastole', 'glucose', 'weight'];
             
