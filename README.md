@@ -1,2 +1,2 @@
 # Helath-Tracker
-My medicine tracking app
+My health tracking app
