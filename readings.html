@@ -317,10 +317,10 @@
 
         <div id="detailedHistoryContainer">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>📅 Detailed 30-Day Reading History</h2>
+                <h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2>
                 <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
             </div>
-            <p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>
+            <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>
             </div>
 
         <div id="overallAveragesContainer">
@@ -770,7 +770,8 @@
             if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
-                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>${emptyMessage}`;
+                // Updated Title and Description on empty state
+                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>${emptyMessage}`;
                 document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>${emptyMessage}`;
                 return;
             }
@@ -997,7 +998,7 @@
             container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
         }
         
-        // --- DISPLAY 3: Detailed 30-Day History Table ---
+        // --- DISPLAY 3: Detailed 30-Day History Table (UPDATED TITLE/DESC) ---
         function displayDetailedHistory(readingsByPerson) {
             const container = document.getElementById('detailedHistoryContainer');
             
@@ -1019,7 +1020,8 @@
 
 
             if (personNames.size === 0 || uniqueDates.length === 0) {
-                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
+                 // Updated Title and Description on empty state
+                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
                  return;
             }
 
@@ -1028,7 +1030,7 @@
 
             let tableHTML = `
                 <p style="text-align: center; font-style: italic; color: #555;">
-                    Showing the **latest reading per day** for each person across the last 30 days. 
+                    Showing the **latest recorded reading** for each person on a given day across the last 30 days. 
                     For a full export, please use the download button above.
                 </p>
                 <table class="data-table">
@@ -1085,8 +1087,8 @@
             });
 
             tableHTML += `</tbody></table>`;
-            // Re-inject the surrounding container HTML with the button
-            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
+            // Re-inject the surrounding container HTML with the button and the updated title
+            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
         }
 
         // --- EXPORT FUNCTIONALITY (CSV/Excel) ---
