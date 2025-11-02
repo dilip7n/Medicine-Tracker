@@ -131,7 +131,7 @@
             padding: 12px 10px;
             border: 1px solid #eee;
             text-align: center;
-            font-size: 0.9em;
+            font-size: 0.9em; /* KEEP this for overall table detail */
         }
         
         .data-table thead th {
@@ -166,8 +166,9 @@
             font-style: italic;
         }
         
-        .detail-reading {
-            font-size: 0.9em;
+        /* CRITICAL FIX: Increased size for Today's individual readings */
+        #todayAveragesContainer .detail-reading {
+            font-size: 1.0em; /* Increase font size */
         }
 
         /* Auth Styles */
@@ -694,6 +695,7 @@
             const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
             if (validData.length === 0) return { avg: null, count: 0 };
             
+            // Ensure data is treated as a number during sum
             const sum = validData.reduce((acc, r) => acc + (Number(r[metric]) || 0), 0);
             return { avg: sum / validData.length, count: validData.length };
         }
@@ -769,6 +771,7 @@
             const container = document.getElementById('todayAveragesContainer');
             const personsWithData = Object.keys(allPersonTodayReadings);
             
+            // FIX: Correctly call formatDate function in the header
             let contentHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>`;
 
             if (personsWithData.length === 0) {
@@ -804,10 +807,16 @@
                 personsWithData.sort().forEach(person => {
                     const reading = allPersonTodayReadings[person].find(r => r.time === time);
                     
-                    if (reading && reading.id) { // CRITICAL CHECK: Ensure reading and its ID are available for deletion
-                        const bp = (reading.systole && reading.diastole) ? `${reading.systole}/${reading.diastole}` : '';
-                        const glucose = reading.glucose ? reading.glucose.toFixed(1) : '';
-                        const weight = reading.weight ? reading.weight.toFixed(1) : '';
+                    if (reading && reading.id) { 
+                        // FIX: Explicitly cast to Number and check for null/undefined to prevent large timestamp display
+                        const sys = Number(reading.systole) || null;
+                        const dia = Number(reading.diastole) || null;
+                        const glu = Number(reading.glucose) || null;
+                        const wei = Number(reading.weight) || null;
+
+                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : '';
+                        const glucose = glu !== null ? glu.toFixed(1) : '';
+                        const weight = wei !== null ? wei.toFixed(1) : '';
                         
                         tableHTML += `
                             <td style="text-align: left;">
@@ -961,9 +970,10 @@
                     const r = latestReadingPerDay[key];
                     
                     if (r) {
-                        const bp = (r.systole !== null && r.diastole !== null) ? `${r.systole}/${r.diastole}` : `<span class="no-data">N/A</span>`;
-                        const glucose = r.glucose !== null ? r.glucose.toFixed(1) : `<span class="no-data">N/A</span>`;
-                        const weight = r.weight !== null ? r.weight.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        // FIX: Explicitly check for null/undefined after Number() conversion
+                        const bp = (Number(r.systole) && Number(r.diastole)) ? `${r.systole}/${r.diastole}` : `<span class="no-data">N/A</span>`;
+                        const glucose = Number(r.glucose) ? r.glucose.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        const weight = Number(r.weight) ? r.weight.toFixed(1) : `<span class="no-data">N/A</span>`;
                         tableHTML += `
                             <td class="detail-reading">${bp}</td>
                             <td class="detail-reading">${glucose}</td>
