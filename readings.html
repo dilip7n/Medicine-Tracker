@@ -265,7 +265,7 @@
         </div>
         
         <div id="todayAveragesContainer">
-            <h2>☀️ Today's Individual Readings (${todayDateString})</h2>
+            <h2>☀️ Today's Individual Readings</h2> 
             </div>
 
         <div id="detailedHistoryContainer">
@@ -296,15 +296,15 @@
         import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
 
-        // Firebase configuration (REPLACE with your actual config)
+        // 2. Your web app's Firebase configuration (UPDATED)
         const firebaseConfig = {
-            apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4", // REPLACE
-            authDomain: "medicine-tracker-b90f2.firebaseapp.com", // REPLACE
-            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com", // REPLACE
-            projectId: "medicine-tracker-b90f2", // REPLACE
-            storageBucket: "medicine-tracker-b90f2.firebasestorage.app", // REPLACE
-            messagingSenderId: "230127910329", // REPLACE
-            appId: "1:230127910329:web:114eea8f3846c446948a68" // REPLACE
+            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY", // UPDATED
+            authDomain: "medicine-tracker-b90f2.firebaseapp.com", // UPDATED
+            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com", // UPDATED
+            projectId: "medicine-tracker-b90f2", // UPDATED
+            storageBucket: "medicine-tracker-b90f2.firebasestorage.app", // UPDATED
+            messagingSenderId: "230127910329", // UPDATED
+            appId: "1:230127910329:web:756789fcd3a1ac02948a68" // UPDATED
         };
 
         // Initialize Firebase
@@ -325,6 +325,7 @@
         // --- UTILITY: Date Formatting (DD-MMM-YY) ---
         function formatDate(dateString) {
             if (!dateString) return '';
+            // Use date only part to prevent timezone shift issues on Date object creation
             const date = new Date(dateString + 'T00:00:00'); 
             
             const day = date.getDate().toString().padStart(2, '0');
@@ -551,6 +552,7 @@
         // --- CORE CRUD & UI LOGIC ---
 
         function addReading() {
+            // 1. Check for basic requirements
             if (!currentUser || !currentPerson) {
                 alert("Please select or enter a person's name first.");
                 return;
@@ -572,6 +574,7 @@
                 return;
             }
 
+            // 2. Prepare data object
             const newReading = {
                 date: date,
                 time: time,
@@ -583,9 +586,9 @@
                 timestamp: Date.now()
             };
 
+            // 3. Save to Firebase (Fixes button not working if config was the issue)
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
             
-            // CRITICAL FIX: Use push() to generate a unique key and prevent overwriting.
             push(readingsRef, newReading) 
                 .then(() => {
                     // Clear inputs after successful save
@@ -614,7 +617,7 @@
             if (!currentUser || personNames.size === 0) {
                 // Clear all tables and show empty state if no data
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
-                document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${todayDateString})</h2>${emptyMessage}`;
+                document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
                 document.getElementById('detailedHistoryContainer').innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2>${emptyMessage}`;
                 document.getElementById('overallAveragesContainer').innerHTML = `<h2>📈 Overall Averages Summary</h2>${emptyMessage}`;
                 return;
@@ -680,7 +683,7 @@
             });
 
             // Display all tables
-            displayTodayReadings(allPersonTodayReadings); // Updated function call
+            displayTodayReadings(allPersonTodayReadings); 
             displayAllAverages(allPersonAverages);
             displayDetailedHistory();
         }
@@ -701,13 +704,15 @@
             const container = document.getElementById('todayAveragesContainer');
             const personsWithData = Object.keys(allPersonTodayReadings);
             
+            // 3. Fix: Dynamically set the header with the correctly formatted date
+            container.querySelector('h2').textContent = `☀️ Today's Individual Readings (${formatDate(todayDateString)})`;
+
             if (personsWithData.length === 0) {
-                container.innerHTML = `<h2>☀️ Today's Individual Readings (${todayDateString})</h2><p style="text-align:center; color:#777;">No readings recorded today.</p>`;
+                container.innerHTML += `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
                 return;
             }
             
             let tableHTML = `
-                <h2>☀️ Today's Individual Readings (${todayDateString})</h2>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -761,7 +766,8 @@
             });
 
             tableHTML += `</tbody></table>`;
-            container.innerHTML = tableHTML;
+            // Preserve the H2 tag and append the table
+            container.innerHTML = container.querySelector('h2').outerHTML + tableHTML;
         }
 
 
