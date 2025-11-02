@@ -131,7 +131,7 @@
             padding-left: 10px;
         }
 
-        /* Reading List TABLE STYLES (NEW) */
+        /* Reading List TABLE STYLES */
         #readingList {
             margin-top: 30px;
             overflow-x: auto;
@@ -181,6 +181,49 @@
         .delete-btn:hover {
             background: #d32f2f;
         }
+        
+        /* New Styles for Overall Averages Table (BEAUTIFUL TABLE) */
+        #allAveragesTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #allAveragesTable th, #allAveragesTable td {
+            padding: 12px 10px;
+            border: 1px solid #eee;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        #allAveragesTable thead th {
+            background-color: #1a4f78; /* Dark Blue Header */
+            color: white;
+            font-weight: bold;
+        }
+
+        #allAveragesTable tbody th {
+            text-align: left;
+            background-color: #f0f8ff; /* Light Blue for Person Name */
+            font-weight: bold;
+        }
+
+        #allAveragesTable tr:nth-child(even) {
+            background-color: #f7f9fc;
+        }
+
+        .avg-bp {
+            white-space: nowrap;
+            font-weight: bold;
+        }
+        
+        .no-data {
+            color: #999;
+            font-style: italic;
+        }
+
 
         /* Auth Styles */
         #authContainer {
@@ -298,6 +341,10 @@
         <div id="readingList">
             <h2>Reading History</h2>
             </div>
+        
+        <div id="allAveragesContainer" style="margin-top: 50px; margin-bottom: 20px;">
+            <h2>📈 Overall Averages Summary</h2>
+            </div>
 
     </div>
 
@@ -340,12 +387,11 @@
         let currentPerson = '';
         const today = new Date();
         document.getElementById('recordDate').value = today.toISOString().split('T')[0];
-        document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); // Set default time
+        document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); 
 
         // --- UTILITY: Date Formatting (DD-MMM-YY) ---
         function formatDate(dateString) {
             if (!dateString) return '';
-            // Use 'T00:00:00' to ensure correct date interpretation, preventing timezone issues
             const date = new Date(dateString + 'T00:00:00'); 
             
             const day = date.getDate().toString().padStart(2, '0');
@@ -607,7 +653,9 @@
             };
 
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
-            push(readingsRef, newReading)
+            
+            // CRITICAL FIX: Use push() to generate a unique key and prevent overwriting.
+            push(readingsRef, newReading) 
                 .then(() => {
                     // Clear inputs after successful save
                     document.getElementById('systole').value = '';
@@ -630,7 +678,7 @@
             }
         }
 
-        // --- loadReadings (UPDATED to display data in a Table) ---
+        // --- loadReadings (Display Detailed Table) ---
         function loadReadings() {
             const listEl = document.getElementById('readingList');
             const personNameEl = document.getElementById('currentPersonName');
@@ -642,6 +690,8 @@
                 document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
                 document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
                 document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
+                // Also clear the overall averages container when no person is selected
+                document.getElementById('allAveragesContainer').innerHTML = '<h2>📈 Overall Averages Summary</h2>';
                 return;
             }
 
@@ -654,10 +704,11 @@
                  document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
                  document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
                  document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
+                 calculateAverages(personReadings); // Call to calculate all person averages even if current is empty
                  return;
             }
 
-            // Create the Table structure
+            // Create the Detailed Reading Table structure
             let tableHTML = `
                 <table id="readingTable">
                     <thead>
@@ -697,42 +748,7 @@
             calculateAverages(personReadings);
         }
         
-        // --- CALCULATION LOGIC ---
-        function calculateAverages(readings) {
-            const metrics = ['systole', 'diastole', 'glucose', 'weight'];
-            
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const oneWeekAgo = new Date(today); 
-            oneWeekAgo.setDate(today.getDate() - 7);
-            
-            const oneMonthAgo = new Date(today); 
-            oneMonthAgo.setMonth(today.getMonth() - 1);
-            
-            const todayDateString = new Date().toISOString().split('T')[0];
-
-            const filtered = {
-                day: readings.filter(r => r.date === todayDateString),
-                week: readings.filter(r => new Date(r.date) >= oneWeekAgo),
-                month: readings.filter(r => new Date(r.date) >= oneMonthAgo),
-                all: readings
-            };
-            
-            const results = {};
-
-            metrics.forEach(metric => {
-                results[metric] = {
-                    day: calculate(filtered.day, metric),
-                    week: calculate(filtered.week, metric),
-                    month: calculate(filtered.month, metric),
-                    all: calculate(filtered.all, metric)
-                };
-            });
-            
-            displayAverages(results);
-        }
-
+        // Helper function for calculation
         function calculate(data, metric) {
             const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
             if (validData.length === 0) return { avg: null, count: 0 };
@@ -740,8 +756,55 @@
             const sum = validData.reduce((acc, r) => acc + r[metric], 0);
             return { avg: sum / validData.length, count: validData.length };
         }
+
+        // --- CALCULATION LOGIC (Processes ALL people and Current Person) ---
+        function calculateAverages(currentPersonReadings) {
+            const metrics = ['systole', 'diastole', 'glucose', 'weight'];
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const oneWeekAgo = new Date(today); oneWeekAgo.setDate(today.getDate() - 7);
+            const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
+            const todayDateString = new Date().toISOString().split('T')[0];
+
+            // 1. Calculate Averages for ALL People (for the bottom table)
+            const allPersonAverages = {};
+            
+            personNames.forEach(person => {
+                const personReadings = allReadings.filter(r => r.person === person);
+                
+                const filtered = {
+                    day: personReadings.filter(r => r.date === todayDateString),
+                    week: personReadings.filter(r => new Date(r.date) >= oneWeekAgo),
+                    month: personReadings.filter(r => new Date(r.date) >= oneMonthAgo),
+                };
+                
+                const results = {};
+                metrics.forEach(metric => {
+                    results[metric] = {
+                        day: calculate(filtered.day, metric),
+                        week: calculate(filtered.week, metric),
+                        month: calculate(filtered.month, metric),
+                    };
+                });
+                allPersonAverages[person] = results;
+            });
+            displayAllAverages(allPersonAverages); // Display the new overall table
+
+            // 2. Calculate Averages for the CURRENT Person (for the top summary box)
+            const currentPersonResults = {};
+            metrics.forEach(metric => {
+                currentPersonResults[metric] = {
+                    day: calculate(currentPersonReadings.filter(r => r.date === todayDateString), metric),
+                    week: calculate(currentPersonReadings.filter(r => new Date(r.date) >= oneWeekAgo), metric),
+                    month: calculate(currentPersonReadings.filter(r => new Date(r.date) >= oneMonthAgo), metric),
+                    all: calculate(currentPersonReadings, metric)
+                };
+            });
+            displayAverages(currentPersonResults); // Display the top summary box
+        }
         
-        // --- DISPLAY LOGIC ---
+        // --- DISPLAY LOGIC: Current Person Summary Box ---
         function displayAverages(results) {
             
             const formatBP = (sys, dia) => {
@@ -777,6 +840,74 @@
                 <p><strong>Last 30 Days Average:</strong> ${formatMetric(results.weight.month, 'kg/lbs')}</p>
                 <p><strong>All Time Average:</strong> ${formatMetric(results.weight.all, 'kg/lbs')}</p>
             `;
+        }
+
+        // --- NEW DISPLAY LOGIC: Generates the All Person Averages Table ---
+        function displayAllAverages(allPersonAverages) {
+            const container = document.getElementById('allAveragesContainer');
+            if (personNames.size === 0) {
+                container.innerHTML = '<h2>📈 Overall Averages Summary</h2><p style="text-align:center;">No readings available yet to calculate averages.</p>';
+                return;
+            }
+
+            const formatValue = (data, unit = '') => {
+                if (data.avg === null) return `<span class="no-data">N/A (${data.count})</span>`;
+                return `${data.avg.toFixed(1)}${unit} <span style="font-size:0.8em; color:#555;">(${data.count})</span>`;
+            };
+            
+            const formatBP = (sys, dia) => {
+                if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
+                return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${sys.count})</span>`;
+            };
+
+            let tableHTML = `
+                <h2>📈 Overall Averages Summary</h2>
+                <div style="overflow-x: auto;">
+                    <table id="allAveragesTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">Person</th>
+                                <th colspan="3">Blood Pressure (Sys/Dia mmHg)</th>
+                                <th colspan="3">Glucose (mg/dL)</th>
+                                <th colspan="3">Weight (kg/lbs)</th>
+                            </tr>
+                            <tr>
+                                <th>Daily</th>
+                                <th>Weekly</th>
+                                <th>Monthly</th>
+                                <th>Daily</th>
+                                <th>Weekly</th>
+                                <th>Monthly</th>
+                                <th>Daily</th>
+                                <th>Weekly</th>
+                                <th>Monthly</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+            Array.from(personNames).sort().forEach(person => {
+                const results = allPersonAverages[person];
+                if (!results) return;
+
+                tableHTML += `
+                    <tr>
+                        <th>${person}</th>
+                        <td>${formatBP(results.systole.day, results.diastole.day)}</td>
+                        <td>${formatBP(results.systole.week, results.diastole.week)}</td>
+                        <td>${formatBP(results.systole.month, results.diastole.month)}</td>
+                        <td>${formatValue(results.glucose.day)}</td>
+                        <td>${formatValue(results.glucose.week)}</td>
+                        <td>${formatValue(results.glucose.month)}</td>
+                        <td>${formatValue(results.weight.day)}</td>
+                        <td>${formatValue(results.weight.week)}</td>
+                        <td>${formatValue(results.weight.month)}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `</tbody></table></div>`;
+            container.innerHTML = tableHTML;
         }
 
     </script>
