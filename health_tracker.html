@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holistic Health Tracker (BP/Glucose)</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
+    <style>
+        /* Global & Reset */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #f7f9fc;
+        }
+
+        h1 {
+            color: #1a4f78;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        /* Controls and Inputs */
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .controls label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+        
+        .controls input[type="date"],
+        .controls input[type="number"],
+        .controls input[type="text"],
+        .controls select,
+        #personSelect {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        /* Buttons */
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .add {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+        
+        /* Summary Section */
+        #summaryContainer {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd; /* Light blue background */
+            border-radius: 8px;
+            border-left: 5px solid #2196F3;
+            color: #1a4f78;
+            font-size: 1.1em;
+        }
+
+        .summary-metric {
+            margin-top: 10px;
+            border-top: 1px dashed #bbdefb;
+            padding-top: 5px;
+        }
+        .summary-metric h3 {
+            margin-bottom: 5px;
+            font-size: 1.2em;
+            color: #0d47a1;
+        }
+
+        /* Reading List */
+        #readingList {
+            margin-top: 30px;
+        }
+        
+        .reading-card {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #4CAF50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reading-card-content {
+            flex-grow: 1;
+        }
+
+        .reading-card-content strong {
+            display: block;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .reading-card-content span {
+            color: #777;
+            font-size: 0.9em;
+        }
+
+        .reading-card-actions button {
+            background: #f44336;
+            color: white;
+            padding: 5px 10px;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+
+        /* Auth Styles (Same as before) */
+        #authContainer {
+            max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px;
+        }
+        .signup-fields { display: none; }
+        #authContainer.signup-mode .signup-fields { display: block; }
+    </style>
+</head>
+<body>
+    <div id="authContainer" style="display:none;">
+        <h2>🔒 Health Tracker Access</h2>
+        <div style="margin:20px 0;">
+            <div class="signup-fields">
+                <input type="text" id="name" placeholder="Your Name" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+            </div>
+            <input type="email" id="email" placeholder="Email" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+            <input type="password" id="password" placeholder="Password (min 6 chars)" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+            <div class="signup-fields">
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" style="width:100%; padding:10px; margin:5px 0; box-sizing:border-box;">
+            </div>
+        </div>
+        <button class="add" onclick="login()" style="width:48%; margin:2%;" id="loginBtn">Login</button>
+        <button class="export" onclick="toggleSignupMode()" style="width:48%; margin:2%;" id="signupToggleBtn">Sign Up</button>
+        <div id="authError" style="color:red; margin-top:10px;"></div>
+    </div>
+
+    <div id="appContainer" style="display:none;">
+        <div style="text-align:right; margin-bottom:20px; display:flex; justify-content:flex-end; align-items:center;">
+            <span id="userEmail" style="margin-right:10px; font-weight:bold;"></span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+        
+        <h1>❤️ Daily Health Readings</h1>
+        
+        <div class="controls">
+            <h2>Record a New Reading</h2>
+            <div class="input-grid">
+                <div>
+                    <label for="recordDate">Date</label>
+                    <input type="date" id="recordDate">
+                </div>
+                
+                <div>
+                    <label for="personSelect">Person Name (Type or Select)</label>
+                    <select id="personSelect" onchange="handlePersonChange(this.value)">
+                        <option value="" disabled selected>Select a person...</option>
+                        <option value="Custom">Add New Person...</option>
+                    </select>
+                    <input type="text" id="personCustomInput" placeholder="Enter new name here" style="display:none;">
+                </div>
+                
+                <div>
+                    <label for="systole">Systolic (BP)</label>
+                    <input type="number" id="systole" placeholder="e.g., 120" step="1">
+                </div>
+                
+                <div>
+                    <label for="diastole">Diastolic (BP)</label>
+                    <input type="number" id="diastole" placeholder="e.g., 80" step="1">
+                </div>
+
+                <div>
+                    <label for="glucose">Glucose (mg/dL)</label>
+                    <input type="number" id="glucose" placeholder="e.g., 100" step="0.1">
+                </div>
+
+                <div>
+                    <label for="weight">Weight (kg/lbs)</label>
+                    <input type="number" id="weight" placeholder="e.g., 75" step="0.1">
+                </div>
+                
+                </div>
+            
+            <button class="add" onclick="addReading()">Add Reading</button>
+        </div>
+        
+        <div id="summaryContainer">
+            <h2>Health Averages for <span id="currentPersonName">...</span></h2>
+            <div class="summary-metric" id="bpSummary">
+                <h3>🩺 Blood Pressure</h3>
+            </div>
+            <div class="summary-metric" id="glucoseSummary">
+                <h3>🩸 Glucose</h3>
+            </div>
+            <div class="summary-metric" id="weightSummary">
+                <h3>⚖️ Weight</h3>
+            </div>
+        </div>
+
+        <div id="readingList">
+            <h2>Reading History</h2>
+            </div>
+
+    </div>
+
+    <script type="module">
+        // Make functions global for inline onclick handlers
+        window.login = login;
+        window.signup = signup;
+        window.logout = logout;
+        window.toggleSignupMode = toggleSignupMode; 
+        window.handlePersonChange = handlePersonChange;
+        window.addReading = addReading;
+        window.deleteReading = deleteReading;
+        window.loadReadings = loadReadings; // Make loadReadings available globally too
+
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
+        import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
+
+        // Firebase configuration (REPLACE with your actual config)
+        const firebaseConfig = {
+            // *** NOTE: You must replace this with the config from your Firebase project. ***
+            apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4", 
+            authDomain: "medicine-tracker-b90f2.firebaseapp.com",
+            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
+            projectId: "medicine-tracker-b90f2",
+            storageBucket: "medicine-tracker-b90f2.firebasestorage.app",
+            messagingSenderId: "230127910329",
+            appId: "1:230127910329:web:114eea8f3846c446948a68"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let allReadings = [];
+        let personNames = new Set();
+        let currentPerson = '';
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('recordDate').value = today;
+
+        // --- AUTHENTICATION FUNCTIONS (Identical to Medicine Tracker) ---
+        function toggleSignupMode() {
+            const container = document.getElementById('authContainer');
+            const toggleBtn = document.getElementById('signupToggleBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            const isSignupMode = container.classList.contains('signup-mode');
+
+            if (isSignupMode) {
+                container.classList.remove('signup-mode');
+                toggleBtn.textContent = 'Sign Up';
+                toggleBtn.onclick = toggleSignupMode;
+                loginBtn.onclick = login;
+            } else {
+                container.classList.add('signup-mode');
+                toggleBtn.textContent = 'Register';
+                toggleBtn.onclick = signup;
+                loginBtn.onclick = () => { container.classList.remove('signup-mode'); login(); };
+            }
+            document.getElementById('authError').textContent = '';
+        }
+
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('authError');
+            if (!email || !password) { errorEl.textContent = 'Please enter email and password'; return; }
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    errorEl.textContent = '';
+                    showApp();
+                })
+                .catch((error) => {
+                    errorEl.textContent = 'Login failed: ' + error.message;
+                });
+        }
+
+        function signup() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorEl = document.getElementById('authError');
+
+            if (!name || !email || !password || !confirmPassword || password !== confirmPassword) {
+                errorEl.textContent = 'Please check all fields and ensure passwords match.';
+                return;
+            }
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    const userRef = ref(db, 'users/' + currentUser.uid + '/profile');
+                    set(userRef, { name: name, email: email }).then(() => showApp());
+                })
+                .catch((error) => {
+                    errorEl.textContent = 'Signup failed: ' + error.message;
+                });
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                signOut(auth).then(() => {
+                    currentUser = null;
+                    showLogin();
+                });
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('authContainer').style.display = 'block';
+            document.getElementById('appContainer').style.display = 'none';
+        }
+
+        function showApp() {
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            
+            const profileRef = ref(db, 'users/' + currentUser.uid + '/profile/name');
+            onValue(profileRef, (snapshot) => {
+                const userName = snapshot.val();
+                document.getElementById('userEmail').textContent = userName || currentUser.email;
+            }, { onlyOnce: true });
+
+            setupRealtimeSync(); 
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                showApp();
+            } else {
+                currentUser = null;
+                showLogin();
+            }
+        });
+        // --- END AUTHENTICATION ---
+
+
+        // --- REALTIME SYNC & LOAD ---
+        let syncListener = null;
+        function setupRealtimeSync() {
+            if (!currentUser) return;
+            if (syncListener) syncListener(); 
+
+            // Use a new path for health readings
+            const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
+
+            syncListener = onValue(readingsRef, (snapshot) => {
+                const data = snapshot.val(); 
+                allReadings = [];
+                personNames.clear();
+
+                if (data) {
+                    for (const key in data) {
+                        const reading = { id: key, ...data[key] };
+                        allReadings.push(reading);
+                        if (reading.person) {
+                            personNames.add(reading.person);
+                        }
+                    }
+                }
+                // Sort by date descending
+                allReadings.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                updatePersonDropdown();
+                // Load readings for the currently selected person or the first person
+                if (!currentPerson && personNames.size > 0) {
+                    currentPerson = allReadings[0].person;
+                }
+                
+                loadReadings(); 
+
+            }, (error) => {
+                console.error('Real-time sync error:', error);
+            });
+        }
+        
+        // --- PERSON MANAGEMENT ---
+        function updatePersonDropdown() {
+            const select = document.getElementById('personSelect');
+            select.innerHTML = '';
+            select.innerHTML += `<option value="" disabled>Select a person...</option>`;
+            select.innerHTML += `<option value="Custom">Add New Person...</option>`;
+            
+            let foundCurrent = false;
+            personNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                if (name === currentPerson) {
+                    option.selected = true;
+                    foundCurrent = true;
+                }
+                select.appendChild(option);
+            });
+
+            if (!foundCurrent && currentPerson) {
+                 // Add the current person if they were just typed in
+                 const option = document.createElement('option');
+                 option.value = currentPerson;
+                 option.textContent = currentPerson;
+                 option.selected = true;
+                 select.appendChild(option);
+            }
+            
+            if (select.value === "") {
+                select.querySelector('option[disabled]').selected = true;
+                document.getElementById('currentPersonName').textContent = '...';
+            } else {
+                 document.getElementById('currentPersonName').textContent = currentPerson;
+            }
+        }
+        
+        function handlePersonChange(value) {
+            const customInput = document.getElementById('personCustomInput');
+            if (value === 'Custom') {
+                customInput.style.display = 'block';
+                customInput.value = '';
+                customInput.focus();
+                customInput.onchange = () => {
+                    const newName = customInput.value.trim();
+                    if (newName) {
+                        currentPerson = newName;
+                        personNames.add(newName);
+                        updatePersonDropdown(); // Update dropdown to show the new selection
+                        customInput.style.display = 'none';
+                        loadReadings();
+                    } else {
+                        // Revert selection if custom name is empty
+                        document.getElementById('personSelect').value = currentPerson; 
+                    }
+                };
+            } else if (value) {
+                currentPerson = value;
+                customInput.style.display = 'none';
+                loadReadings();
+            }
+        }
+        
+
+        // --- CORE CRUD & UI LOGIC ---
+
+        function addReading() {
+            if (!currentUser || !currentPerson) {
+                alert("Please select or enter a person's name first.");
+                return;
+            }
+            
+            const date = document.getElementById('recordDate').value;
+            const systole = parseFloat(document.getElementById('systole').value);
+            const diastole = parseFloat(document.getElementById('diastole').value);
+            const glucose = parseFloat(document.getElementById('glucose').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            
+            if (!date) {
+                alert("Please enter a date.");
+                return;
+            }
+            if (isNaN(systole) && isNaN(diastole) && isNaN(glucose) && isNaN(weight)) {
+                alert("Please enter at least one reading.");
+                return;
+            }
+
+            const newReading = {
+                date: date,
+                person: currentPerson,
+                systole: isNaN(systole) ? null : systole,
+                diastole: isNaN(diastole) ? null : diastole,
+                glucose: isNaN(glucose) ? null : glucose,
+                weight: isNaN(weight) ? null : weight,
+                timestamp: Date.now()
+            };
+
+            const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
+            push(readingsRef, newReading)
+                .then(() => {
+                    // Clear inputs after successful save
+                    document.getElementById('systole').value = '';
+                    document.getElementById('diastole').value = '';
+                    document.getElementById('glucose').value = '';
+                    document.getElementById('weight').value = '';
+                    document.getElementById('recordDate').value = today; // Reset date to today
+                })
+                .catch(err => alert('Failed to save reading: ' + err.message));
+        }
+        
+        function deleteReading(id) {
+            if (!currentUser || !id) return;
+            if (confirm('Are you sure you want to delete this reading?')) {
+                const readingRef = ref(db, `users/${currentUser.uid}/healthReadings/${id}`);
+                remove(readingRef).catch(err => console.error('Delete failed:', err));
+            }
+        }
+
+        function loadReadings() {
+            const listEl = document.getElementById('readingList');
+            const personNameEl = document.getElementById('currentPersonName');
+            listEl.innerHTML = '';
+            
+            if (!currentPerson) {
+                personNameEl.textContent = '...';
+                listEl.innerHTML = '<p style="text-align:center; color:#777;">Please select or add a person to view readings and averages.</p>';
+                document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
+                document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
+                document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
+                return;
+            }
+
+            personNameEl.textContent = currentPerson;
+
+            const personReadings = allReadings.filter(r => r.person === currentPerson);
+            
+            if (personReadings.length === 0) {
+                 listEl.innerHTML = `<p style="text-align:center; color:#777;">No readings found for ${currentPerson}. Add one above!</p>`;
+                 return;
+            }
+
+            personReadings.forEach(r => {
+                const bp = r.systole && r.diastole ? `${r.systole}/${r.diastole} mmHg` : '';
+                const glucose = r.glucose ? `Glucose: ${r.glucose} mg/dL` : '';
+                const weight = r.weight ? `Weight: ${r.weight} kg/lbs` : '';
+
+                const card = document.createElement('div');
+                card.className = 'reading-card';
+                card.innerHTML = `
+                    <div class="reading-card-content">
+                        <strong>${r.date}</strong>
+                        <span>${[bp, glucose, weight].filter(Boolean).join(' | ')}</span>
+                    </div>
+                    <div class="reading-card-actions">
+                        <button class="del" onclick="deleteReading('${r.id}')">Delete</button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+            
+            calculateAverages(personReadings);
+        }
+        
+        // --- CALCULATION LOGIC ---
+        function calculateAverages(readings) {
+            const metrics = ['systole', 'diastole', 'glucose', 'weight'];
+            const today = new Date();
+            const oneWeekAgo = new Date(today); oneWeekAgo.setDate(today.getDate() - 7);
+            const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
+
+            const filtered = {
+                day: readings.filter(r => r.date === today.toISOString().split('T')[0]),
+                week: readings.filter(r => new Date(r.date) >= oneWeekAgo),
+                month: readings.filter(r => new Date(r.date) >= oneMonthAgo)
+            };
+            
+            const results = {};
+
+            metrics.forEach(metric => {
+                results[metric] = {
+                    day: calculate(filtered.day, metric),
+                    week: calculate(filtered.week, metric),
+                    month: calculate(filtered.month, metric),
+                    all: calculate(readings, metric)
+                };
+            });
+            
+            // Format and display
+            displayAverages(results);
+        }
+
+        function calculate(data, metric) {
+            const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
+            if (validData.length === 0) return { avg: null, count: 0 };
+            
+            const sum = validData.reduce((acc, r) => acc + r[metric], 0);
+            return { avg: sum / validData.length, count: validData.length };
+        }
+        
+        function displayAverages(results) {
+            
+            // BP Summary
+            const formatBP = (sys, dia) => {
+                if (sys.avg === null || dia.avg === null) return 'No Data';
+                return `${sys.avg.toFixed(0)} / ${dia.avg.toFixed(0)} mmHg (${sys.count} readings)`;
+            };
+            
+            document.getElementById('bpSummary').innerHTML = `
+                <h3>🩺 Blood Pressure</h3>
+                <p><strong>Last 24 Hrs:</strong> ${formatBP(results.systole.day, results.diastole.day)}</p>
+                <p><strong>Last 7 Days:</strong> ${formatBP(results.systole.week, results.diastole.week)}</p>
+                <p><strong>Last 30 Days:</strong> ${formatBP(results.systole.month, results.diastole.month)}</p>
+                <p><strong>All Time:</strong> ${formatBP(results.systole.all, results.diastole.all)}</p>
+            `;
+            
+            // Glucose Summary
+            const formatMetric = (data, unit) => {
+                if (data.avg === null) return 'No Data';
+                return `${data.avg.toFixed(1)} ${unit} (${data.count} readings)`;
+            };
+
+            document.getElementById('glucoseSummary').innerHTML = `
+                <h3>🩸 Glucose</h3>
+                <p><strong>Last 24 Hrs:</strong> ${formatMetric(results.glucose.day, 'mg/dL')}</p>
+                <p><strong>Last 7 Days:</strong> ${formatMetric(results.glucose.week, 'mg/dL')}</p>
+                <p><strong>Last 30 Days:</strong> ${formatMetric(results.glucose.month, 'mg/dL')}</p>
+                <p><strong>All Time:</strong> ${formatMetric(results.glucose.all, 'mg/dL')}</p>
+            `;
+            
+            // Weight Summary
+            document.getElementById('weightSummary').innerHTML = `
+                <h3>⚖️ Weight</h3>
+                <p><strong>Last 24 Hrs:</strong> ${formatMetric(results.weight.day, 'kg/lbs')}</p>
+                <p><strong>Last 7 Days:</strong> ${formatMetric(results.weight.week, 'kg/lbs')}</p>
+                <p><strong>Last 30 Days:</strong> ${formatMetric(results.weight.month, 'kg/lbs')}</p>
+                <p><strong>All Time:</strong> ${formatMetric(results.weight.all, 'kg/lbs')}</p>
+            `;
+        }
+
+    </script>
+</body>
+</html>
