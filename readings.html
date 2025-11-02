@@ -97,6 +97,12 @@
             color: white;
         }
         
+        .update {
+            background: #FF9800; /* Orange for Update */
+            color: white;
+            display: none; /* Hidden by default */
+        }
+        
         /* New Table Download Button Style */
         .table-export-btn {
             background: #2196F3; /* Light Blue for table export */
@@ -202,7 +208,8 @@
         .nav-link:hover {
             background: #0d47a1;
         }
-        .delete-btn {
+        /* Action Buttons within Tables */
+        .action-btn {
             background-color: #f44336;
             color: white;
             border: none;
@@ -212,8 +219,11 @@
             font-size: 0.8em;
             margin-left: 5px;
         }
-        .delete-btn:hover {
-            background-color: #d32f2f;
+        .edit-btn {
+            background-color: #4CAF50; /* Green for Edit */
+        }
+        .action-btn:hover {
+            opacity: 0.8;
         }
 
     </style>
@@ -249,6 +259,8 @@
         <div class="controls">
             <h2>Record a New Reading</h2>
             <div class="input-grid">
+                <input type="hidden" id="readingIdToEdit" value="">
+                
                 <div class="input-group">
                     <label for="recordDate">Date</label>
                     <input type="date" id="recordDate">
@@ -292,7 +304,8 @@
                 
             </div>
             
-            <button class="add" onclick="addReading()">Add Reading</button>
+            <button class="add" id="addButton" onclick="addReading()">Add Reading</button>
+            <button class="update" id="updateButton" onclick="updateReading()">Update Reading</button>
             
             <button class="export-btn" onclick="exportFullHistory()">⬇️ Download Full History (CSV)</button>
 
@@ -328,11 +341,13 @@
         window.handlePersonChange = handlePersonChange;
         window.handleCustomNameBlur = handleCustomNameBlur; 
         window.addReading = addReading;
+        window.updateReading = updateReading; // New global function
+        window.editReading = editReading;     // New global function
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
         window.exportFullHistory = exportFullHistory; 
-        window.exportDetailedHistory = exportDetailedHistory; // New export function
-        window.exportOverallAverages = exportOverallAverages; // New export function
+        window.exportDetailedHistory = exportDetailedHistory; 
+        window.exportOverallAverages = exportOverallAverages; 
 
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
@@ -510,19 +525,6 @@
                     return dateB - dateA;
                 });
                 
-                // --- DEBUGGING STEP ---
-                console.log('--- Firebase Sync Result ---');
-                console.log('Readings Fetched Count:', allReadings.length);
-                if (allReadings.length > 0) {
-                     // Log the raw structure of the latest reading
-                     console.log('Sample Reading:', allReadings[0]); 
-                     console.log('Detected Persons:', Array.from(personNames));
-                } else {
-                     console.log('Detected Persons: None');
-                }
-                console.log('--------------------------');
-                // ------------------------
-
                 // **CRITICAL FIX:** Ensure currentPerson is set based on first available data person, or the highest sorted name
                 const sortedNames = Array.from(personNames).sort();
                 if (sortedNames.length > 0 && (!currentPerson || !personNames.has(currentPerson))) {
@@ -534,6 +536,7 @@
                 
                 // CRITICAL STEP: Call the main display function after data sync and initialization
                 loadReadings(); 
+                resetForm(); // Reset form state after sync
 
             }, (error) => {
                 console.error('Real-time sync error: Failed to read from database. Check Firebase Security Rules.', error);
@@ -624,19 +627,39 @@
             }
         }
         
+        // --- FORM STATE MANAGEMENT ---
+        function resetForm() {
+            const now = new Date();
+            document.getElementById('recordDate').value = now.toISOString().split('T')[0];
+            document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5); 
+            document.getElementById('systole').value = '';
+            document.getElementById('diastole').value = '';
+            document.getElementById('glucose').value = '';
+            document.getElementById('weight').value = '';
+            document.getElementById('readingIdToEdit').value = '';
+
+            document.getElementById('addButton').style.display = 'block';
+            document.getElementById('updateButton').style.display = 'none';
+            
+            // Re-select the current person if one exists, otherwise keep "Select a person..."
+            if (currentPerson) {
+                document.getElementById('personSelect').value = currentPerson;
+            } else {
+                 document.getElementById('personSelect').value = '';
+            }
+        }
+
 
         // --- CORE CRUD & UI LOGIC ---
 
-        function addReading() {
-            // 1. Check for basic requirements
+        function getReadingData(isUpdate = false) {
             if (!currentUser || !currentPerson) {
                 alert("Please select or enter a person's name first.");
-                return;
+                return null;
             }
             
             const date = document.getElementById('recordDate').value;
             const time = document.getElementById('recordTime').value;
-            // Use Number() to convert empty strings to 0, then check against isNaN and convert 0 to null
             const systoleValue = document.getElementById('systole').value;
             const diastoleValue = document.getElementById('diastole').value;
             const glucoseValue = document.getElementById('glucose').value;
@@ -649,16 +672,14 @@
             
             if (!date || !time) {
                 alert("Please enter both date and time.");
-                return;
+                return null;
             }
-            // Check if ALL are null (no reading entered)
             if (!systole && !diastole && !glucose && !weight) {
                 alert("Please enter at least one reading.");
-                return;
+                return null;
             }
 
-            // 2. Prepare data object
-            const newReading = {
+            const readingData = {
                 date: date,
                 time: time,
                 person: currentPerson,
@@ -666,27 +687,75 @@
                 diastole: diastole,
                 glucose: glucose,
                 weight: weight,
-                timestamp: Date.now()
             };
+            
+            if (!isUpdate) {
+                readingData.timestamp = Date.now();
+            }
 
-            // 3. Save to Firebase 
+            return readingData;
+        }
+
+        // Add (Create)
+        function addReading() {
+            const newReading = getReadingData(false);
+            if (!newReading) return;
+
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
             
             push(readingsRef, newReading) 
-                .then(() => {
-                    // Clear inputs after successful save
-                    document.getElementById('systole').value = '';
-                    document.getElementById('diastole').value = '';
-                    document.getElementById('glucose').value = '';
-                    document.getElementById('weight').value = '';
-                    // Keep date/time as current date/time after save for quick entry
-                    const now = new Date();
-                    document.getElementById('recordDate').value = now.toISOString().split('T')[0];
-                    document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5); 
-                })
+                .then(() => resetForm())
                 .catch(err => alert('Failed to save reading: ' + err.message));
         }
         
+        // Edit (Read existing data into form)
+        function editReading(id) {
+            const reading = allReadings.find(r => r.id === id);
+            if (!reading) {
+                alert("Reading not found.");
+                return;
+            }
+            
+            document.getElementById('readingIdToEdit').value = id;
+            document.getElementById('recordDate').value = reading.date || todayDateString;
+            document.getElementById('recordTime').value = reading.time || '00:00';
+            document.getElementById('systole').value = reading.systole !== null ? reading.systole : '';
+            document.getElementById('diastole').value = reading.diastole !== null ? reading.diastole : '';
+            document.getElementById('glucose').value = reading.glucose !== null ? reading.glucose : '';
+            document.getElementById('weight').value = reading.weight !== null ? reading.weight : '';
+            
+            // Set person and switch button visibility
+            currentPerson = reading.person;
+            document.getElementById('personSelect').value = reading.person;
+            document.getElementById('addButton').style.display = 'none';
+            document.getElementById('updateButton').style.display = 'block';
+
+            window.scrollTo(0, 0); // Scroll to top to show the form
+        }
+
+        // Update (Save changes to an existing reading)
+        function updateReading() {
+            const id = document.getElementById('readingIdToEdit').value;
+            if (!id) {
+                alert("Error: No reading selected for update.");
+                return;
+            }
+
+            const updatedData = getReadingData(true);
+            if (!updatedData) return;
+
+            const readingRef = ref(db, `users/${currentUser.uid}/healthReadings/${id}`);
+            
+            // Only update the data fields, not the original timestamp
+            update(readingRef, updatedData)
+                .then(() => {
+                    alert("Reading updated successfully!");
+                    resetForm();
+                })
+                .catch(err => alert('Failed to update reading: ' + err.message));
+        }
+
+        // Delete (Destroy)
         function deleteReading(id) {
             if (!currentUser || !id) return;
             if (confirm('Are you sure you want to delete this reading?')) {
@@ -701,8 +770,8 @@
             if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
-                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>${emptyMessage}`;
-                document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2></div>${emptyMessage}`;
+                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>${emptyMessage}`;
+                document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>${emptyMessage}`;
                 return;
             }
             
@@ -715,7 +784,7 @@
             const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
             if (validData.length === 0) return { avg: null, count: 0 };
             
-            // FIX: Removed || 0 from the sum. Since validData is already filtered, all values are non-null/undefined.
+            // FIX: Ensure only valid, filtered values are summed.
             const sum = validData.reduce((acc, r) => acc + Number(r[metric]), 0);
             return { avg: sum / validData.length, count: validData.length };
         }
@@ -773,7 +842,6 @@
         const formatBP = (sys, dia) => {
             const bpCount = Math.min(sys.count, dia.count); // BP count should be the minimum of S and D
             if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
-            // FIX: Added Math.min for accurate reading count for BP
             return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${bpCount} R)</span>`;
         };
         
@@ -834,13 +902,11 @@
                     const reading = allPersonTodayReadings[person].find(r => r.time === time);
                     
                     if (reading && reading.id) { 
-                        // FIX: Explicitly cast to Number and check for null/undefined to prevent large timestamp display
                         const sys = Number(reading.systole) || null;
                         const dia = Number(reading.diastole) || null;
                         const glu = Number(reading.glucose) || null;
                         const wei = Number(reading.weight) || null;
 
-                        // Use string concatenation for display, but only if the value is not null
                         const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : '';
                         const glucose = glu !== null ? glu.toFixed(1) : '';
                         const weight = wei !== null ? wei.toFixed(1) : '';
@@ -851,7 +917,8 @@
                                     BP: ${bp || '<span class="no-data">N/A</span>'} | 
                                     Gl: ${glucose || '<span class="no-data">N/A</span>'} | 
                                     W: ${weight || '<span class="no-data">N/A</span>'} 
-                                    <button class="delete-btn" onclick="deleteReading('${reading.id}')">X</button>
+                                    <button class="action-btn edit-btn" onclick="editReading('${reading.id}')">✏️</button>
+                                    <button class="action-btn" onclick="deleteReading('${reading.id}')">X</button>
                                 </div>
                             </td>
                         `;
@@ -1064,21 +1131,22 @@
             sortedForExport.forEach(r => {
                 const date = r.date || '';
                 const time = r.time || '';
-                const person = r.person || '';
+                // Use quotes around the person's name just in case it contains commas
+                const person = r.person ? `"${r.person.replace(/"/g, '""')}"` : ''; 
                 // Ensure null values are represented as empty strings in CSV
                 const systole = r.systole !== null && r.systole !== undefined ? r.systole : '';
                 const diastole = r.diastole !== null && r.diastole !== undefined ? r.diastole : '';
                 const glucose = r.glucose !== null && r.glucose !== undefined ? r.glucose : '';
                 const weight = r.weight !== null && r.weight !== undefined ? r.weight : '';
 
-                csvContent += `${date},${time},"${person}",${systole},${diastole},${glucose},${weight}\n`;
+                csvContent += `${date},${time},${person},${systole},${diastole},${glucose},${weight}\n`;
             });
 
             const timestamp = new Date().toISOString().slice(0, 10);
             triggerDownload(csvContent, `Health_Readings_Full_Export_${timestamp}.csv`);
         }
 
-        // EXPORT 2: Overall Averages Download (New)
+        // EXPORT 2: Overall Averages Download (Unchanged)
         function exportOverallAverages() {
             if (Object.keys(allPersonAveragesCache).length === 0) {
                 alert("No averages available to export.");
@@ -1113,14 +1181,17 @@
                 const monthlyGlucose = getAvg(results.glucose.month);
                 const monthlyWeight = getAvg(results.weight.month);
 
-                csvContent += `"${person}",${dailyBP},${dailyGlucose},${dailyWeight},${weeklyBP},${weeklyGlucose},${weeklyWeight},${monthlyBP},${monthlyGlucose},${monthlyWeight}\n`;
+                // Use quotes around the person's name
+                const escapedPerson = `"${person.replace(/"/g, '""')}"`;
+
+                csvContent += `${escapedPerson},${dailyBP},${dailyGlucose},${dailyWeight},${weeklyBP},${weeklyGlucose},${weeklyWeight},${monthlyBP},${monthlyGlucose},${monthlyWeight}\n`;
             });
             
             const timestamp = new Date().toISOString().slice(0, 10);
             triggerDownload(csvContent, `Overall_Averages_Export_${timestamp}.csv`);
         }
 
-        // EXPORT 3: Detailed 30-Day History Download (New)
+        // EXPORT 3: Detailed 30-Day History Download (Fixed CSV alignment)
         function exportDetailedHistory() {
             const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
                 .sort((a, b) => new Date(b) - new Date(a)) 
@@ -1133,9 +1204,10 @@
             }
 
             // 1. Prepare Header
-            let header1 = "Date," + sortedPersonNames.map(name => `${name},,`).join('') + "\n";
-            let header2 = "Date," + sortedPersonNames.map(name => `BP,Glucose,Weight`).join(',') + "\n";
-            let csvContent = header1 + header2;
+            // FIX: Correct header generation for proper column alignment in CSV
+            let header1 = "Date,";
+            header1 += sortedPersonNames.map(name => `"${name} BP","${name} Glucose","${name} Weight"`).join(',') + "\n";
+            let csvContent = header1;
 
             // 2. Populate Rows
             uniqueDates.forEach(date => {
@@ -1152,6 +1224,7 @@
                         const glu = r.glucose !== null && r.glucose !== undefined ? r.glucose : '';
                         const wei = r.weight !== null && r.weight !== undefined ? r.weight : '';
                         
+                        // BP is separated into two columns in the raw data, but combined here for the "BP" column
                         const bp = (sys !== '' && dia !== '') ? `${sys}/${dia}` : '';
                         row += `${bp},${glu},${wei},`;
                     } else {
