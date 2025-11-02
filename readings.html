@@ -97,8 +97,18 @@
             color: white;
         }
         
+        /* New Table Download Button Style */
+        .table-export-btn {
+            background: #2196F3; /* Light Blue for table export */
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-top: 10px;
+            float: right;
+        }
+        
         .export-btn {
-            background: #007bff; /* Blue for export */
+            background: #007bff; /* Blue for full export */
             color: white;
             margin-top: 15px;
         }
@@ -131,7 +141,7 @@
             padding: 12px 10px;
             border: 1px solid #eee;
             text-align: center;
-            font-size: 0.9em; /* KEEP this for overall table detail */
+            font-size: 0.9em; 
         }
         
         .data-table thead th {
@@ -166,9 +176,9 @@
             font-style: italic;
         }
         
-        /* CRITICAL FIX: Increased size for Today's individual readings */
+        /* CRITICAL FIX: Increased font size for Today's individual readings */
         #todayAveragesContainer .detail-reading {
-            font-size: 1.0em; /* Increase font size */
+            font-size: 1.0em; 
         }
 
         /* Auth Styles */
@@ -293,12 +303,18 @@
             </div>
 
         <div id="detailedHistoryContainer">
-            <h2>📅 Detailed 30-Day Reading History</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>📅 Detailed 30-Day Reading History</h2>
+                <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
+            </div>
             <p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>
             </div>
 
         <div id="overallAveragesContainer">
-            <h2>📈 Overall Averages Summary</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>📈 Overall Averages Summary</h2>
+                <button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button>
+            </div>
             </div>
 
     </div>
@@ -315,6 +331,8 @@
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
         window.exportFullHistory = exportFullHistory; 
+        window.exportDetailedHistory = exportDetailedHistory; // New export function
+        window.exportOverallAverages = exportOverallAverages; // New export function
 
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
@@ -339,6 +357,8 @@
 
         let currentUser = null;
         let allReadings = [];
+        let allPersonAveragesCache = {}; // Cache for overall averages
+        let detailedHistoryDataCache = {}; // Cache for detailed history data
         let personNames = new Set();
         let currentPerson = '';
         const today = new Date();
@@ -681,8 +701,8 @@
             if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
-                document.getElementById('detailedHistoryContainer').innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2>${emptyMessage}`;
-                document.getElementById('overallAveragesContainer').innerHTML = `<h2>📈 Overall Averages Summary</h2>${emptyMessage}`;
+                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>${emptyMessage}`;
+                document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2></div>${emptyMessage}`;
                 return;
             }
             
@@ -695,16 +715,15 @@
             const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
             if (validData.length === 0) return { avg: null, count: 0 };
             
-            // Ensure data is treated as a number during sum
-            const sum = validData.reduce((acc, r) => acc + (Number(r[metric]) || 0), 0);
+            // FIX: Removed || 0 from the sum. Since validData is already filtered, all values are non-null/undefined.
+            const sum = validData.reduce((acc, r) => acc + Number(r[metric]), 0);
             return { avg: sum / validData.length, count: validData.length };
         }
 
         // --- CALCULATION LOGIC (Processes ALL people) ---
         function calculateAndDisplayTables() {
             const metrics = ['systole', 'diastole', 'glucose', 'weight'];
-            const allPersonAverages = {};
-            const allPersonTodayReadings = {}; 
+            allPersonAveragesCache = {}; // Reset cache
             
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -741,24 +760,21 @@
                     };
                 });
                 
-                allPersonAverages[person] = results;
-
-                // Store raw readings for today's table, sorted by time
-                if (filtered.day.length > 0) {
-                     allPersonTodayReadings[person] = filtered.day.sort((a,b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
-                }
+                allPersonAveragesCache[person] = results;
             });
 
             // Display all tables
-            displayTodayReadings(allPersonTodayReadings); 
-            displayAllAverages(allPersonAverages);
-            displayDetailedHistory();
+            displayTodayReadings(readingsByPerson); // Pass raw readings
+            displayAllAverages(allPersonAveragesCache);
+            displayDetailedHistory(readingsByPerson);
         }
         
         // --- FORMATTING HELPERS ---
-        const formatBP = (sys, dia, count = 0) => {
+        const formatBP = (sys, dia) => {
+            const bpCount = Math.min(sys.count, dia.count); // BP count should be the minimum of S and D
             if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
-            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${count} R)</span>`;
+            // FIX: Added Math.min for accurate reading count for BP
+            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${bpCount} R)</span>`;
         };
         
         const formatMetric = (data) => {
@@ -767,9 +783,19 @@
         };
         
         // --- DISPLAY 1: Today's Individual Readings Table ---
-        function displayTodayReadings(allPersonTodayReadings) {
+        function displayTodayReadings(readingsByPerson) {
             const container = document.getElementById('todayAveragesContainer');
-            const personsWithData = Object.keys(allPersonTodayReadings);
+            
+            // Get today's readings, sorted by person and then time
+            const allPersonTodayReadings = {};
+            const personsWithData = Array.from(personNames).filter(person => {
+                const dayReadings = (readingsByPerson[person] || []).filter(r => r.date === todayDateString);
+                if (dayReadings.length > 0) {
+                    allPersonTodayReadings[person] = dayReadings.sort((a,b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+                    return true;
+                }
+                return false;
+            }).sort();
             
             // FIX: Correctly call formatDate function in the header
             let contentHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>`;
@@ -793,7 +819,7 @@
                     <thead>
                         <tr>
                             <th>Time</th>
-                            ${personsWithData.sort().map(person => `
+                            ${personsWithData.map(person => `
                                 <th>${person}</th>
                             `).join('')}
                         </tr>
@@ -804,7 +830,7 @@
             sortedTimes.forEach(time => {
                 tableHTML += `<tr><th>${time}</th>`;
                 
-                personsWithData.sort().forEach(person => {
+                personsWithData.forEach(person => {
                     const reading = allPersonTodayReadings[person].find(r => r.time === time);
                     
                     if (reading && reading.id) { 
@@ -814,6 +840,7 @@
                         const glu = Number(reading.glucose) || null;
                         const wei = Number(reading.weight) || null;
 
+                        // Use string concatenation for display, but only if the value is not null
                         const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : '';
                         const glucose = glu !== null ? glu.toFixed(1) : '';
                         const weight = wei !== null ? wei.toFixed(1) : '';
@@ -841,7 +868,7 @@
         }
 
 
-        // --- DISPLAY 2: Overall Averages Summary Table (Unchanged) ---
+        // --- DISPLAY 2: Overall Averages Summary Table ---
         function displayAllAverages(allPersonAverages) {
             const container = document.getElementById('overallAveragesContainer');
             const personsWithData = Object.keys(allPersonAverages).filter(p => {
@@ -850,12 +877,11 @@
             });
             
             if (personsWithData.length === 0) {
-                container.innerHTML = `<h2>📈 Overall Averages Summary</h2><p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
+                container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div><p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
                 return;
             }
 
             let tableHTML = `
-                <h2>📈 Overall Averages Summary</h2>
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -885,9 +911,9 @@
                 tableHTML += `
                     <tr>
                         <th>${person}</th>
-                        <td>${formatBP(results.systole.day, results.diastole.day, results.systole.day.count)}</td>
-                        <td>${formatBP(results.systole.week, results.diastole.week, results.systole.week.count)}</td>
-                        <td>${formatBP(results.systole.month, results.diastole.month, results.systole.month.count)}</td>
+                        <td>${formatBP(results.systole.day, results.diastole.day)}</td>
+                        <td>${formatBP(results.systole.week, results.diastole.week)}</td>
+                        <td>${formatBP(results.systole.month, results.diastole.month)}</td>
                         <td>${formatMetric(results.glucose.day)}</td>
                         <td>${formatMetric(results.glucose.week)}</td>
                         <td>${formatMetric(results.glucose.month)}</td>
@@ -899,44 +925,41 @@
             });
 
             tableHTML += `</tbody></table>`;
-            container.innerHTML = tableHTML;
+            
+            // Re-inject the surrounding container HTML with the button
+            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
         }
         
         // --- DISPLAY 3: Detailed 30-Day History Table ---
-        function displayDetailedHistory() {
+        function displayDetailedHistory(readingsByPerson) {
             const container = document.getElementById('detailedHistoryContainer');
-            if (personNames.size === 0) {
-                container.innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2><p style="text-align:center; color:#777;">No history to display.</p>`;
-                return;
-            }
-
-            // 1. Determine the last 30 unique dates
+            
+            // 1. Determine the last 30 unique dates and generate latestReadingPerDay cache
             const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
                 .sort((a, b) => new Date(b) - new Date(a)) 
                 .slice(0, 30); 
-
-            if (uniqueDates.length === 0) {
-                 container.innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2><p style="text-align:center; color:#777;">No readings in the last 30 days.</p>`;
-                 return;
-            }
-
-            // 2. Map readings to the latest entry per person per date
-            const latestReadingPerDay = {}; 
-
+            
+            detailedHistoryDataCache = {}; // Reset cache
+            
             allReadings.forEach(r => {
                 if (!r.person) return; 
                 const key = `${r.date}_${r.person}`;
                 // Only keep the latest reading of the day based on timestamp
-                if (!latestReadingPerDay[key] || r.timestamp > latestReadingPerDay[key].timestamp) {
-                    latestReadingPerDay[key] = r;
+                if (!detailedHistoryDataCache[key] || r.timestamp > detailedHistoryDataCache[key].timestamp) {
+                    detailedHistoryDataCache[key] = r;
                 }
             });
+
+
+            if (personNames.size === 0 || uniqueDates.length === 0) {
+                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
+                 return;
+            }
 
             // 3. Generate the table
             const sortedPersonNames = Array.from(personNames).sort();
 
             let tableHTML = `
-                <h2>📅 Detailed 30-Day Reading History</h2>
                 <p style="text-align: center; font-style: italic; color: #555;">
                     Showing the **latest reading per day** for each person across the last 30 days. 
                     For a full export, please use the download button above.
@@ -967,13 +990,18 @@
                 
                 sortedPersonNames.forEach(person => {
                     const key = `${date}_${person}`;
-                    const r = latestReadingPerDay[key];
+                    const r = detailedHistoryDataCache[key]; // Use the cached map
                     
                     if (r) {
-                        // FIX: Explicitly check for null/undefined after Number() conversion
-                        const bp = (Number(r.systole) && Number(r.diastole)) ? `${r.systole}/${r.diastole}` : `<span class="no-data">N/A</span>`;
-                        const glucose = Number(r.glucose) ? r.glucose.toFixed(1) : `<span class="no-data">N/A</span>`;
-                        const weight = Number(r.weight) ? r.weight.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        // FIX: Explicitly check for null/undefined after Number() conversion.
+                        const sys = Number(r.systole) || null;
+                        const dia = Number(r.diastole) || null;
+                        const glu = Number(r.glucose) || null;
+                        const wei = Number(r.weight) || null;
+                        
+                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
+                        const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         tableHTML += `
                             <td class="detail-reading">${bp}</td>
                             <td class="detail-reading">${glucose}</td>
@@ -990,10 +1018,32 @@
             });
 
             tableHTML += `</tbody></table>`;
-            container.innerHTML = tableHTML;
+            // Re-inject the surrounding container HTML with the button
+            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
         }
 
         // --- EXPORT FUNCTIONALITY (CSV/Excel) ---
+        
+        // UTILITY: General CSV Download Function
+        function triggerDownload(csvContent, filename) {
+            if (!csvContent || csvContent.length < 50) { // Simple check for empty/short content
+                alert("No data available to export for this view.");
+                return;
+            }
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`Successfully generated CSV file: ${filename}`);
+        }
+
+        // EXPORT 1: Full History Download (Unchanged)
         function exportFullHistory() {
             if (allReadings.length === 0) {
                 alert("No history data available to export.");
@@ -1024,20 +1074,98 @@
                 csvContent += `${date},${time},"${person}",${systole},${diastole},${glucose},${weight}\n`;
             });
 
-            // 4. Create and trigger download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.setAttribute('href', url);
+            const timestamp = new Date().toISOString().slice(0, 10);
+            triggerDownload(csvContent, `Health_Readings_Full_Export_${timestamp}.csv`);
+        }
+
+        // EXPORT 2: Overall Averages Download (New)
+        function exportOverallAverages() {
+            if (Object.keys(allPersonAveragesCache).length === 0) {
+                alert("No averages available to export.");
+                return;
+            }
+
+            let csvContent = "Person,Daily BP (Sys/Dia),Daily Glucose,Daily Weight,Weekly BP (Sys/Dia),Weekly Glucose,Weekly Weight,Monthly BP (Sys/Dia),Monthly Glucose,Monthly Weight\n";
+            
+            const personsWithData = Object.keys(allPersonAveragesCache).sort();
+            
+            personsWithData.forEach(person => {
+                const results = allPersonAveragesCache[person];
+                
+                // Helper to get formatted average or empty string
+                const getAvg = (data) => data.avg !== null ? data.avg.toFixed(1) : '';
+                const getBP = (sys, dia) => {
+                    if (sys.avg !== null && dia.avg !== null) {
+                        return `${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}`;
+                    }
+                    return '';
+                };
+                
+                const dailyBP = getBP(results.systole.day, results.diastole.day);
+                const dailyGlucose = getAvg(results.glucose.day);
+                const dailyWeight = getAvg(results.weight.day);
+
+                const weeklyBP = getBP(results.systole.week, results.diastole.week);
+                const weeklyGlucose = getAvg(results.glucose.week);
+                const weeklyWeight = getAvg(results.weight.week);
+
+                const monthlyBP = getBP(results.systole.month, results.diastole.month);
+                const monthlyGlucose = getAvg(results.glucose.month);
+                const monthlyWeight = getAvg(results.weight.month);
+
+                csvContent += `"${person}",${dailyBP},${dailyGlucose},${dailyWeight},${weeklyBP},${weeklyGlucose},${weeklyWeight},${monthlyBP},${monthlyGlucose},${monthlyWeight}\n`;
+            });
             
             const timestamp = new Date().toISOString().slice(0, 10);
-            link.setAttribute('download', `Health_Readings_Export_${timestamp}.csv`);
+            triggerDownload(csvContent, `Overall_Averages_Export_${timestamp}.csv`);
+        }
+
+        // EXPORT 3: Detailed 30-Day History Download (New)
+        function exportDetailedHistory() {
+            const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
+                .sort((a, b) => new Date(b) - new Date(a)) 
+                .slice(0, 30); 
+            const sortedPersonNames = Array.from(personNames).sort();
             
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            alert('Successfully generated CSV file for download.');
+            if (uniqueDates.length === 0 || sortedPersonNames.length === 0) {
+                alert("No detailed history data available to export.");
+                return;
+            }
+
+            // 1. Prepare Header
+            let header1 = "Date," + sortedPersonNames.map(name => `${name},,`).join('') + "\n";
+            let header2 = "Date," + sortedPersonNames.map(name => `BP,Glucose,Weight`).join(',') + "\n";
+            let csvContent = header1 + header2;
+
+            // 2. Populate Rows
+            uniqueDates.forEach(date => {
+                let row = `"${formatDate(date)}",`;
+                
+                sortedPersonNames.forEach(person => {
+                    const key = `${date}_${person}`;
+                    const r = detailedHistoryDataCache[key];
+                    
+                    if (r) {
+                        // Ensure null values are empty strings in CSV
+                        const sys = r.systole !== null && r.systole !== undefined ? r.systole : '';
+                        const dia = r.diastole !== null && r.diastole !== undefined ? r.diastole : '';
+                        const glu = r.glucose !== null && r.glucose !== undefined ? r.glucose : '';
+                        const wei = r.weight !== null && r.weight !== undefined ? r.weight : '';
+                        
+                        const bp = (sys !== '' && dia !== '') ? `${sys}/${dia}` : '';
+                        row += `${bp},${glu},${wei},`;
+                    } else {
+                        row += `,,,\n`; // 3 empty commas for N/A
+                    }
+                });
+                
+                // Trim trailing comma if any
+                if (row.endsWith(',')) row = row.slice(0, -1);
+                csvContent += row + "\n";
+            });
+
+            const timestamp = new Date().toISOString().slice(0, 10);
+            triggerDownload(csvContent, `Detailed_History_Export_${timestamp}.csv`);
         }
 
     </script>
