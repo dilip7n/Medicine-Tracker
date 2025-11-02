@@ -299,7 +299,7 @@
         window.addReading = addReading;
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
-        window.exportFullHistory = exportFullHistory; // New Export function
+        window.exportFullHistory = exportFullHistory; 
 
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
@@ -473,13 +473,16 @@
                     return dateB - dateA;
                 });
 
-                updatePersonDropdown();
-                if (!currentPerson && allReadings.length > 0) {
-                    currentPerson = allReadings[0].person;
-                    updatePersonDropdown(true);
+                // **CRITICAL FIX: Ensure dropdown state is correct before rendering tables**
+                if (allReadings.length > 0 && !currentPerson) {
+                    // Set currentPerson to the first person found if none is set
+                    currentPerson = allReadings[0].person; 
+                    updatePersonDropdown(true); // Force select the first person
+                } else {
+                    updatePersonDropdown();
                 }
                 
-                // CRITICAL FIX: Call the main display function after data sync
+                // Call the main display function after data sync and initialization
                 loadReadings(); 
 
             }, (error) => {
@@ -533,7 +536,8 @@
             } else if (value) {
                 currentPerson = value;
                 customInput.style.display = 'none';
-                loadReadings();
+                // Trigger reload only on manual selection change
+                loadReadings(); 
             }
         }
         
@@ -610,7 +614,6 @@
                     const now = new Date();
                     document.getElementById('recordDate').value = now.toISOString().split('T')[0];
                     document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5); 
-                    // No need to call loadReadings() here, as setupRealtimeSync handles the refresh via onValue listener
                 })
                 .catch(err => alert('Failed to save reading: ' + err.message));
         }
@@ -932,7 +935,7 @@
             container.innerHTML = tableHTML;
         }
 
-        // --- NEW: EXPORT FUNCTIONALITY (CSV/Excel) ---
+        // --- EXPORT FUNCTIONALITY (CSV/Excel) ---
         function exportFullHistory() {
             if (allReadings.length === 0) {
                 alert("No history data available to export.");
