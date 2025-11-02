@@ -37,8 +37,9 @@
         .controls label {
             font-weight: bold;
             display: block;
-            margin-top: 10px;
+            margin-top: 5px; /* Reduced margin */
             color: #555;
+            margin-bottom: 5px;
         }
         
         .controls input[type="date"],
@@ -48,17 +49,38 @@
         #personSelect {
             width: 100%;
             padding: 10px;
-            margin: 5px 0 15px 0;
+            /* Removed bottom margin here to rely on grid gap */
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 16px;
         }
 
+        .input-group {
+            /* Ensures proper alignment within grid items */
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* GRID FIXES for Alignment */
         .input-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 15px;
+            align-items: start; /* Align items to the top of the grid cell */
+        }
+        
+        /* Person Input Group Styling */
+        .person-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px; /* Gap between select and custom input */
+        }
+        
+        #personCustomInput {
+            margin-top: 0; /* Align directly under the select box */
+            display: none; /* Controlled by JS */
         }
 
         /* Buttons */
@@ -103,6 +125,11 @@
             margin-bottom: 5px;
             font-size: 1.2em;
             color: #0d47a1;
+        }
+        
+        .summary-metric p {
+            margin: 5px 0;
+            padding-left: 10px;
         }
 
         /* Reading List */
@@ -182,36 +209,38 @@
         <div class="controls">
             <h2>Record a New Reading</h2>
             <div class="input-grid">
-                <div>
+                <div class="input-group">
                     <label for="recordDate">Date</label>
                     <input type="date" id="recordDate">
                 </div>
                 
-                <div>
-                    <label for="personSelect">Person Name (Type or Select)</label>
-                    <select id="personSelect" onchange="handlePersonChange(this.value)">
-                        <option value="" disabled selected>Select a person...</option>
-                        <option value="Custom">Add New Person...</option>
-                    </select>
-                    <input type="text" id="personCustomInput" placeholder="Enter new name here" style="display:none;">
+                <div class="input-group">
+                    <label for="personSelect">Person Name</label>
+                    <div class="person-input-group">
+                        <select id="personSelect" onchange="handlePersonChange(this.value)">
+                            <option value="" disabled selected>Select a person...</option>
+                            <option value="Custom">Add New Person...</option>
+                        </select>
+                        <input type="text" id="personCustomInput" placeholder="Enter new name here" onblur="handleCustomNameBlur(this.value)">
+                    </div>
                 </div>
                 
-                <div>
+                <div class="input-group">
                     <label for="systole">Systolic (BP)</label>
                     <input type="number" id="systole" placeholder="e.g., 120" step="1">
                 </div>
                 
-                <div>
+                <div class="input-group">
                     <label for="diastole">Diastolic (BP)</label>
                     <input type="number" id="diastole" placeholder="e.g., 80" step="1">
                 </div>
 
-                <div>
+                <div class="input-group">
                     <label for="glucose">Glucose (mg/dL)</label>
                     <input type="number" id="glucose" placeholder="e.g., 100" step="0.1">
                 </div>
 
-                <div>
+                <div class="input-group">
                     <label for="weight">Weight (kg/lbs)</label>
                     <input type="number" id="weight" placeholder="e.g., 75" step="0.1">
                 </div>
@@ -247,9 +276,10 @@
         window.logout = logout;
         window.toggleSignupMode = toggleSignupMode; 
         window.handlePersonChange = handlePersonChange;
+        window.handleCustomNameBlur = handleCustomNameBlur; // New handler
         window.addReading = addReading;
         window.deleteReading = deleteReading;
-        window.loadReadings = loadReadings; // Make loadReadings available globally too
+        window.loadReadings = loadReadings; 
 
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
@@ -258,14 +288,13 @@
 
         // Firebase configuration (REPLACE with your actual config)
         const firebaseConfig = {
-            // *** NOTE: You must replace this with the config from your Firebase project. ***
-            apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4", 
-            authDomain: "medicine-tracker-b90f2.firebaseapp.com",
-            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
-            projectId: "medicine-tracker-b90f2",
-            storageBucket: "medicine-tracker-b90f2.firebasestorage.app",
-            messagingSenderId: "230127910329",
-            appId: "1:230127910329:web:114eea8f3846c446948a68"
+            apiKey: "AIzaSyDYSBWvsWcfU4gfl2ECCJiKKxUgMjuvmF4", // REPLACE
+            authDomain: "medicine-tracker-b90f2.firebaseapp.com", // REPLACE
+            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com", // REPLACE
+            projectId: "medicine-tracker-b90f2", // REPLACE
+            storageBucket: "medicine-tracker-b90f2.firebasestorage.app", // REPLACE
+            messagingSenderId: "230127910329", // REPLACE
+            appId: "1:230127910329:web:114eea8f3846c446948a68" // REPLACE
         };
 
         // Initialize Firebase
@@ -280,7 +309,7 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('recordDate').value = today;
 
-        // --- AUTHENTICATION FUNCTIONS (Identical to Medicine Tracker) ---
+        // --- AUTHENTICATION FUNCTIONS (Same as previous) ---
         function toggleSignupMode() {
             const container = document.getElementById('authContainer');
             const toggleBtn = document.getElementById('signupToggleBtn');
@@ -407,9 +436,10 @@
                 allReadings.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 updatePersonDropdown();
-                // Load readings for the currently selected person or the first person
-                if (!currentPerson && personNames.size > 0) {
+                // Select the first person found if none is currently selected
+                if (!currentPerson && allReadings.length > 0) {
                     currentPerson = allReadings[0].person;
+                    updatePersonDropdown(true); // Force select the first person
                 }
                 
                 loadReadings(); 
@@ -419,65 +449,84 @@
             });
         }
         
-        // --- PERSON MANAGEMENT ---
-        function updatePersonDropdown() {
+        // --- PERSON MANAGEMENT FIXES ---
+        function updatePersonDropdown(forceSelect = false) {
             const select = document.getElementById('personSelect');
+            const customInput = document.getElementById('personCustomInput');
+            
             select.innerHTML = '';
             select.innerHTML += `<option value="" disabled>Select a person...</option>`;
-            select.innerHTML += `<option value="Custom">Add New Person...</option>`;
             
-            let foundCurrent = false;
-            personNames.forEach(name => {
+            // Add existing names
+            const sortedNames = Array.from(personNames).sort();
+            sortedNames.forEach(name => {
                 const option = document.createElement('option');
                 option.value = name;
                 option.textContent = name;
-                if (name === currentPerson) {
-                    option.selected = true;
-                    foundCurrent = true;
+                if (forceSelect && name === currentPerson) {
+                     option.selected = true;
                 }
                 select.appendChild(option);
             });
+            
+            // Add the 'Add New Person' option last
+            const customOption = document.createElement('option');
+            customOption.value = "Custom";
+            customOption.textContent = "Add New Person...";
+            select.appendChild(customOption);
+            
+            // If currentPerson is set, ensure the dropdown reflects it
+            if (currentPerson && !forceSelect) {
+                select.value = currentPerson;
+            } else if (!currentPerson) {
+                select.value = ""; // Ensure prompt is selected
+            }
 
-            if (!foundCurrent && currentPerson) {
-                 // Add the current person if they were just typed in
-                 const option = document.createElement('option');
-                 option.value = currentPerson;
-                 option.textContent = currentPerson;
-                 option.selected = true;
-                 select.appendChild(option);
+            // Ensure custom input is hidden unless 'Custom' is selected
+            if (select.value === 'Custom') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
             }
             
-            if (select.value === "") {
-                select.querySelector('option[disabled]').selected = true;
-                document.getElementById('currentPersonName').textContent = '...';
-            } else {
-                 document.getElementById('currentPersonName').textContent = currentPerson;
-            }
+            document.getElementById('currentPersonName').textContent = currentPerson || '...';
         }
         
         function handlePersonChange(value) {
             const customInput = document.getElementById('personCustomInput');
             if (value === 'Custom') {
+                // Show the custom input field and focus on it
                 customInput.style.display = 'block';
                 customInput.value = '';
                 customInput.focus();
-                customInput.onchange = () => {
-                    const newName = customInput.value.trim();
-                    if (newName) {
-                        currentPerson = newName;
-                        personNames.add(newName);
-                        updatePersonDropdown(); // Update dropdown to show the new selection
-                        customInput.style.display = 'none';
-                        loadReadings();
-                    } else {
-                        // Revert selection if custom name is empty
-                        document.getElementById('personSelect').value = currentPerson; 
-                    }
-                };
+                // We handle setting currentPerson when the user blurs the custom input (handleCustomNameBlur)
             } else if (value) {
+                // A name from the list was selected
                 currentPerson = value;
                 customInput.style.display = 'none';
                 loadReadings();
+            }
+        }
+        
+        function handleCustomNameBlur(value) {
+            const newName = value.trim();
+            const select = document.getElementById('personSelect');
+            const customInput = document.getElementById('personCustomInput');
+            
+            if (newName) {
+                currentPerson = newName;
+                personNames.add(newName);
+                updatePersonDropdown(true); // Force select the new name
+                customInput.style.display = 'none';
+                loadReadings();
+            } else {
+                // If the user entered nothing, revert the select box to the previous value or the default
+                if (currentPerson) {
+                    select.value = currentPerson;
+                } else {
+                    select.value = ""; // Select the disabled prompt
+                    customInput.style.display = 'none';
+                }
             }
         }
         
@@ -556,6 +605,10 @@
             
             if (personReadings.length === 0) {
                  listEl.innerHTML = `<p style="text-align:center; color:#777;">No readings found for ${currentPerson}. Add one above!</p>`;
+                 // Clear summary if no data
+                 document.getElementById('bpSummary').innerHTML = '<h3>🩺 Blood Pressure</h3>';
+                 document.getElementById('glucoseSummary').innerHTML = '<h3>🩸 Glucose</h3>';
+                 document.getElementById('weightSummary').innerHTML = '<h3>⚖️ Weight</h3>';
                  return;
             }
 
@@ -581,17 +634,28 @@
             calculateAverages(personReadings);
         }
         
-        // --- CALCULATION LOGIC ---
+        // --- CALCULATION LOGIC (Updated to ensure correct date filtering) ---
         function calculateAverages(readings) {
             const metrics = ['systole', 'diastole', 'glucose', 'weight'];
+            
+            // Define time boundaries
             const today = new Date();
-            const oneWeekAgo = new Date(today); oneWeekAgo.setDate(today.getDate() - 7);
-            const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
+            today.setHours(0, 0, 0, 0);
+            
+            const oneWeekAgo = new Date(today); 
+            oneWeekAgo.setDate(today.getDate() - 7);
+            
+            const oneMonthAgo = new Date(today); 
+            oneMonthAgo.setMonth(today.getMonth() - 1);
+            
+            const todayDateString = new Date().toISOString().split('T')[0];
 
+            // Filter data by time period
             const filtered = {
-                day: readings.filter(r => r.date === today.toISOString().split('T')[0]),
+                day: readings.filter(r => r.date === todayDateString),
                 week: readings.filter(r => new Date(r.date) >= oneWeekAgo),
-                month: readings.filter(r => new Date(r.date) >= oneMonthAgo)
+                month: readings.filter(r => new Date(r.date) >= oneMonthAgo),
+                all: readings
             };
             
             const results = {};
@@ -601,11 +665,10 @@
                     day: calculate(filtered.day, metric),
                     week: calculate(filtered.week, metric),
                     month: calculate(filtered.month, metric),
-                    all: calculate(readings, metric)
+                    all: calculate(filtered.all, metric)
                 };
             });
             
-            // Format and display
             displayAverages(results);
         }
 
@@ -617,43 +680,43 @@
             return { avg: sum / validData.length, count: validData.length };
         }
         
+        // --- DISPLAY LOGIC (Ensuring Day/Week/Month/All Time are clear) ---
         function displayAverages(results) {
             
-            // BP Summary
+            // Helper function to format BP averages
             const formatBP = (sys, dia) => {
                 if (sys.avg === null || dia.avg === null) return 'No Data';
-                return `${sys.avg.toFixed(0)} / ${dia.avg.toFixed(0)} mmHg (${sys.count} readings)`;
+                return `${sys.avg.toFixed(0)} / ${dia.avg.toFixed(0)} mmHg <span style="font-size:0.9em; color:#555;">(${sys.count} readings)</span>`;
             };
             
             document.getElementById('bpSummary').innerHTML = `
                 <h3>🩺 Blood Pressure</h3>
-                <p><strong>Last 24 Hrs:</strong> ${formatBP(results.systole.day, results.diastole.day)}</p>
-                <p><strong>Last 7 Days:</strong> ${formatBP(results.systole.week, results.diastole.week)}</p>
-                <p><strong>Last 30 Days:</strong> ${formatBP(results.systole.month, results.diastole.month)}</p>
-                <p><strong>All Time:</strong> ${formatBP(results.systole.all, results.diastole.all)}</p>
+                <p><strong>Today's Average:</strong> ${formatBP(results.systole.day, results.diastole.day)}</p>
+                <p><strong>Last 7 Days Average:</strong> ${formatBP(results.systole.week, results.diastole.week)}</p>
+                <p><strong>Last 30 Days Average:</strong> ${formatBP(results.systole.month, results.diastole.month)}</p>
+                <p><strong>All Time Average:</strong> ${formatBP(results.systole.all, results.diastole.all)}</p>
             `;
             
-            // Glucose Summary
+            // Helper function to format other metric averages
             const formatMetric = (data, unit) => {
                 if (data.avg === null) return 'No Data';
-                return `${data.avg.toFixed(1)} ${unit} (${data.count} readings)`;
+                return `${data.avg.toFixed(1)} ${unit} <span style="font-size:0.9em; color:#555;">(${data.count} readings)</span>`;
             };
 
             document.getElementById('glucoseSummary').innerHTML = `
                 <h3>🩸 Glucose</h3>
-                <p><strong>Last 24 Hrs:</strong> ${formatMetric(results.glucose.day, 'mg/dL')}</p>
-                <p><strong>Last 7 Days:</strong> ${formatMetric(results.glucose.week, 'mg/dL')}</p>
-                <p><strong>Last 30 Days:</strong> ${formatMetric(results.glucose.month, 'mg/dL')}</p>
-                <p><strong>All Time:</strong> ${formatMetric(results.glucose.all, 'mg/dL')}</p>
+                <p><strong>Today's Average:</strong> ${formatMetric(results.glucose.day, 'mg/dL')}</p>
+                <p><strong>Last 7 Days Average:</strong> ${formatMetric(results.glucose.week, 'mg/dL')}</p>
+                <p><strong>Last 30 Days Average:</strong> ${formatMetric(results.glucose.month, 'mg/dL')}</p>
+                <p><strong>All Time Average:</strong> ${formatMetric(results.glucose.all, 'mg/dL')}</p>
             `;
             
-            // Weight Summary
             document.getElementById('weightSummary').innerHTML = `
                 <h3>⚖️ Weight</h3>
-                <p><strong>Last 24 Hrs:</strong> ${formatMetric(results.weight.day, 'kg/lbs')}</p>
-                <p><strong>Last 7 Days:</strong> ${formatMetric(results.weight.week, 'kg/lbs')}</p>
-                <p><strong>Last 30 Days:</strong> ${formatMetric(results.weight.month, 'kg/lbs')}</p>
-                <p><strong>All Time:</strong> ${formatMetric(results.weight.all, 'kg/lbs')}</p>
+                <p><strong>Today's Average:</strong> ${formatMetric(results.weight.day, 'kg/lbs')}</p>
+                <p><strong>Last 7 Days Average:</strong> ${formatMetric(results.weight.week, 'kg/lbs')}</p>
+                <p><strong>Last 30 Days Average:</strong> ${formatMetric(results.weight.month, 'kg/lbs')}</p>
+                <p><strong>All Time Average:</strong> ${formatMetric(results.weight.all, 'kg/lbs')}</p>
             `;
         }
 
