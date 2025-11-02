@@ -1,2 +1,2 @@
-# Helath-Tracker
+# Health-Tracker
 My health tracking app
