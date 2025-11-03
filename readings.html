@@ -133,7 +133,7 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            /* CRITICAL: Allows horizontal scrolling */
+            /* CRITICAL: Allows horizontal scrolling on desktop */
             overflow-x: auto; 
         }
 
@@ -231,13 +231,9 @@
         /* --- NEW: MOBILE CARD VIEW & SCROLL ENHANCEMENTS (max-width: 768px) --- */
         @media screen and (max-width: 768px) {
             body {
-                padding: 10px; /* Smaller padding on small screens */
+                padding: 10px; 
             }
             
-            h1, h2 {
-                text-align: left; /* Keep left alignment for better flow */
-            }
-
             /* INPUT FORM CARD VIEW */
             .controls .input-grid {
                 grid-template-columns: 1fr; 
@@ -265,36 +261,92 @@
                 float: none; 
             }
             
-            /* --- TABLE SCROLL FIXES --- */
-            .data-table {
-                /* Reduced min-width to attempt fitting more, but still force scroll */
-                min-width: 800px; 
-            }
-            
-            .data-table th, .data-table td {
-                padding: 6px 4px; /* Significantly reduced padding */
-                font-size: 0.75em; /* Smaller font size */
-                white-space: nowrap;
-            }
-            
-            /* Tighter display for the Averages summary (BP/Count) */
-            .data-table .avg-bp, .data-table .avg-reading {
-                font-size: 1em; /* Keep main numbers readable */
-            }
-            .data-table .avg-bp + span, .data-table .avg-reading + span {
-                /* Display the count (X R) on a new line or block to save horizontal space */
-                display: block; 
-                font-size: 0.7em; 
-                line-height: 1;
+            /* --- TABLES CARD VIEW TRANSFORMATION --- */
+            #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer {
+                /* Disable horizontal scroll for card view */
+                overflow-x: unset; 
+                padding: 10px; /* Reduced container padding */
             }
 
-            /* Today's Individual Readings: make action buttons smaller */
+            .data-table {
+                /* Hide default table styles */
+                border: none;
+                min-width: unset; 
+                width: 100%; /* Must take full width */
+            }
+
+            /* Hide Table Header on mobile */
+            .data-table thead {
+                display: none;
+            }
+
+            /* Convert Row to Card */
+            .data-table tr {
+                display: block;
+                margin-bottom: 15px;
+                padding: 15px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                background: white;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                /* Ensure no background interference from row striping */
+                background-color: white !important; 
+            }
+            
+            /* Style the Person/Date Header (first column: <th>) */
+            .data-table tr th {
+                display: block; /* Full width */
+                text-align: center;
+                font-size: 1.1em;
+                padding: 5px 0 10px 0;
+                margin-bottom: 10px;
+                border: none;
+                border-bottom: 2px solid #1a4f78;
+                background: transparent !important;
+                color: #1a4f78;
+                font-weight: bold;
+            }
+
+            /* Convert Data Cell (<td>) to Labeled Block */
+            .data-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding: 8px 0; /* Vertical padding only */
+                border: none;
+                border-bottom: 1px dashed #eee;
+                font-size: 0.9em;
+            }
+            .data-table td:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            /* Inject the Label from data-label attribute */
+            .data-table td::before {
+                content: attr(data-label); 
+                font-weight: bold;
+                text-align: left;
+                color: #555;
+                white-space: nowrap;
+                padding-right: 10px;
+            }
+            
+            /* Today's Individual Readings specific adjustments for buttons */
             #todayAveragesContainer .detail-reading {
-                font-size: 0.8em; 
+                font-size: 0.9em; 
+                text-align: right;
             }
             .action-btn {
                 padding: 2px 4px;
                 font-size: 0.7em;
+                margin-left: 2px;
+            }
+            
+            /* Tighter display for the Averages summary */
+            .data-table .avg-bp + span, .data-table .avg-reading + span {
+                display: none; /* Hide the (X R) count in mobile card view to save space */
             }
         }
         /* --- END OF MOBILE CSS --- */
@@ -414,8 +466,8 @@
         window.handlePersonChange = handlePersonChange;
         window.handleCustomNameBlur = handleCustomNameBlur; 
         window.addReading = addReading;
-        window.updateReading = updateReading; // New global function
-        window.editReading = editReading;     // New global function
+        window.updateReading = updateReading; 
+        window.editReading = editReading;     
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
         window.exportFullHistory = exportFullHistory; 
@@ -985,8 +1037,9 @@
                         const glucose = glu !== null ? glu.toFixed(1) : '';
                         const weight = wei !== null ? wei.toFixed(1) : '';
                         
+                        // *** CHANGE: Added data-label attribute for mobile card view ***
                         tableHTML += `
-                            <td style="text-align: left;">
+                            <td style="text-align: left;" data-label="${person}">
                                 <div class="detail-reading" style="font-weight: bold;">
                                     BP: ${bp || '<span class="no-data">N/A</span>'} | 
                                     Gl: ${glucose || '<span class="no-data">N/A</span>'} | 
@@ -997,7 +1050,8 @@
                             </td>
                         `;
                     } else {
-                        tableHTML += `<td><span class="no-data">-</span></td>`;
+                        // *** CHANGE: Added data-label attribute for mobile card view ***
+                        tableHTML += `<td data-label="${person}"><span class="no-data">-</span></td>`;
                     }
                 });
                 
@@ -1049,18 +1103,19 @@
             personsWithData.sort().forEach(person => {
                 const results = allPersonAverages[person];
                 
+                // *** CHANGE: Added data-label attributes to all <td> elements ***
                 tableHTML += `
                     <tr>
                         <th>${person}</th>
-                        <td>${formatBP(results.systole.day, results.diastole.day)}</td>
-                        <td>${formatBP(results.systole.week, results.diastole.week)}</td>
-                        <td>${formatBP(results.systole.month, results.diastole.month)}</td>
-                        <td>${formatMetric(results.glucose.day)}</td>
-                        <td>${formatMetric(results.glucose.week)}</td>
-                        <td>${formatMetric(results.glucose.month)}</td>
-                        <td>${formatMetric(results.weight.day)}</td>
-                        <td>${formatMetric(results.weight.week)}</td>
-                        <td>${formatMetric(results.weight.month)}</td>
+                        <td data-label="Daily Blood Pressure">${formatBP(results.systole.day, results.diastole.day)}</td>
+                        <td data-label="Weekly Blood Pressure">${formatBP(results.systole.week, results.diastole.week)}</td>
+                        <td data-label="Monthly Blood Pressure">${formatBP(results.systole.month, results.diastole.month)}</td>
+                        <td data-label="Daily Glucose">${formatMetric(results.glucose.day)}</td>
+                        <td data-label="Weekly Glucose">${formatMetric(results.glucose.week)}</td>
+                        <td data-label="Monthly Glucose">${formatMetric(results.glucose.month)}</td>
+                        <td data-label="Daily Weight">${formatMetric(results.weight.day)}</td>
+                        <td data-label="Weekly Weight">${formatMetric(results.weight.week)}</td>
+                        <td data-label="Monthly Weight">${formatMetric(results.weight.month)}</td>
                     </tr>
                 `;
             });
@@ -1144,14 +1199,19 @@
                         const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        
+                        // *** CHANGE: Added data-label attributes. Desktop view shows 3 cells per person. ***
                         tableHTML += `
-                            <td class="detail-reading">${bp}</td>
-                            <td class="detail-reading">${glucose}</td>
-                            <td class="detail-reading">${weight}</td>
+                            <td class="detail-reading" data-label="${person} BP">${bp}</td>
+                            <td class="detail-reading" data-label="${person} Glucose">${glucose}</td>
+                            <td class="detail-reading" data-label="${person} Weight">${weight}</td>
                         `;
                     } else {
+                        // *** CHANGE: Replaced single colspan="3" cell with 3 empty cells (with data-label) to enable mobile card view. ***
                         tableHTML += `
-                            <td colspan="3"><span class="no-data">-</span></td>
+                            <td data-label="${person} BP"><span class="no-data">-</span></td>
+                            <td data-label="${person} Glucose"><span class="no-data">-</span></td>
+                            <td data-label="${person} Weight"><span class="no-data">-</span></td>
                         `;
                     }
                 });
