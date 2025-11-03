@@ -657,7 +657,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
-                showApp();
+                checkMfaEnrollmentStatus();
             } else {
                 currentUser = null;
                 showLogin();
@@ -1191,41 +1191,6 @@
         window.sendEnrollmentCode = sendEnrollmentCode;
         window.completeEnrollment = completeEnrollment;
         window.skipMfaEnrollment = skipMfaEnrollment;
-Successfully implemented complete Multi-Factor Authentication (MFA) using phone verification for your health tracker app. Here's what was added:
-
-**New Features:**
-
-1. **Phone MFA Enrollment During Signup** - New users must provide a phone number during registration and will be prompted to enable MFA immediately after account creation
-
-2. **Mandatory MFA Prompt for Existing Users** - Users who signed up before MFA was enabled will be prompted to add their phone number and enable MFA on their next login
-
-3. **MFA Verification During Login** - Users with MFA enabled will receive a 6-digit verification code via SMS that must be entered to complete login
-
-4. **Three New UI Containers:**
-   - MFA Verification screen (for login verification)
-   - MFA Enrollment screen (for setting up 2FA)
-   - RecaptchaVerifier containers for bot protection
-
-5. **Phone Number Storage** - Phone numbers are saved to Firebase Realtime Database under user profiles for future reference
-
-6. **Skip Option** - Users can skip MFA enrollment (with warning) if they choose, though this reduces security
-
-**Implementation Details:**
-
-- Uses Firebase Phone Authentication with RecaptchaVerifier
-- Stores phone numbers in database: `users/{uid}/profile/phoneNumber`
-- Handles MFA sign-in errors gracefully with proper error messages
-- Country code validation (requires + prefix)
-- 6-digit OTP verification with character limit
-- Proper session management and resolver handling
-
-**Security Notes:**
-
-- Email verification is recommended (though not enforced in this implementation)
-- reCAPTCHA protects against bot abuse
-- Phone numbers are validated for proper format
-- Users receive SMS codes for verification
-- MFA enrollment status is checked on every login
 
     </script>
 </body>
