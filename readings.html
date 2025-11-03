@@ -111,6 +111,7 @@
             font-size: 14px;
             margin-top: 10px;
             float: right;
+            white-space: nowrap;
         }
         
         .export-btn {
@@ -133,12 +134,12 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            overflow-x: auto;
+            /* Remove overflow-x: auto; here to force responsive behavior */
         }
 
         .data-table {
             width: 100%;
-            min-width: 900px; 
+            min-width: 0; /* Important for mobile wrap */
             border-collapse: collapse;
             margin-top: 15px;
         }
@@ -182,7 +183,7 @@
             font-style: italic;
         }
         
-        /* CRITICAL FIX: Increased font size for Today's individual readings */
+        /* Increased font size for Today's individual readings */
         #todayAveragesContainer .detail-reading {
             font-size: 1.0em; 
         }
@@ -225,7 +226,143 @@
         .action-btn:hover {
             opacity: 0.8;
         }
+        
+        /* --- MOBILE RESPONSIVENESS: CARD/LIST VIEW --- */
+        @media screen and (max-width: 768px) {
+            
+            /* General Layout Adjustments */
+            body { padding: 10px; }
+            .input-grid { grid-template-columns: 1fr; } /* Stack input fields */
 
+            /* Table Wrapper - Ensure tables don't force a scroll */
+            #overallAveragesContainer, #detailedHistoryContainer {
+                padding: 10px;
+            }
+
+            /* Hiding Headers and Reformatting */
+            .data-table {
+                border: 0;
+            }
+            .data-table thead, .data-table thead tr {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                border: 0;
+            }
+
+            /* Transform rows into cards */
+            .data-table tr {
+                display: block;
+                margin-bottom: 15px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                background-color: #fff;
+            }
+            
+            /* Treat Person/Date header rows specially */
+            .data-table tbody th {
+                display: block;
+                text-align: center;
+                border: none;
+                border-bottom: 1px solid #ccc;
+                background-color: #1a4f78;
+                color: white;
+                font-size: 1.1em;
+                padding: 10px;
+                border-radius: 8px 8px 0 0;
+            }
+            
+            /* Transform cells into block-level elements */
+            .data-table td {
+                display: block;
+                text-align: right;
+                border: none;
+                border-bottom: 1px dotted #ddd;
+                position: relative;
+                padding-left: 50%; /* Make room for the pseudo-element label */
+            }
+
+            /* Insert the original header content as a label using data-label attribute */
+            .data-table td::before {
+                content: attr(data-label) ":";
+                position: absolute;
+                left: 10px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+            
+            .data-table tr:nth-child(even) {
+                background-color: #fff; /* Reset zebra striping for cards */
+            }
+            
+            /* Today's Readings Table Specific adjustments (less severe transformation) */
+            /* Since the first column is TIME, we'll hide the person header row and stack time/reading */
+            #todayAveragesContainer .data-table {
+                 min-width: unset;
+            }
+            #todayAveragesContainer .data-table thead tr:nth-child(1) th {
+                display: none; /* Hide the Time header */
+            }
+            #todayAveragesContainer .data-table thead tr:nth-child(2) th {
+                 display: none; /* Hide the Person Name headers */
+            }
+            #todayAveragesContainer .data-table tbody tr {
+                border: none;
+                box-shadow: none;
+                margin-bottom: 0;
+                display: flex; /* Make row a flex container */
+                flex-wrap: wrap;
+                border-bottom: 1px solid #e0e0e0;
+                padding: 10px 0;
+                background-color: transparent !important;
+            }
+            #todayAveragesContainer .data-table tbody th {
+                /* Time column */
+                flex: 0 0 100%;
+                text-align: left;
+                background-color: transparent;
+                color: #1a4f78;
+                border: none;
+                font-size: 1.1em;
+                padding: 5px 10px;
+                border-bottom: 1px solid #ccc;
+            }
+            #todayAveragesContainer .data-table tbody td {
+                /* Reading data cells */
+                flex: 1 1 50%; /* Allow 2 columns of readings per row */
+                text-align: left;
+                padding-left: 10px;
+                border: none;
+                border-bottom: none;
+                min-width: 50%;
+            }
+            #todayAveragesContainer .data-table tbody td:before {
+                content: attr(data-person) ":"; /* Use person name as label */
+                position: static;
+                width: auto;
+                padding-right: 5px;
+                font-weight: normal;
+                color: #1a4f78;
+            }
+            #todayAveragesContainer .detail-reading {
+                display: block;
+                line-height: 1.4;
+            }
+            .action-btn {
+                margin-top: 5px;
+                margin-right: 5px;
+            }
+
+        }
     </style>
 </head>
 <body>
@@ -320,7 +457,7 @@
                 <h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2>
                 <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
             </div>
-            <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>
+            <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. For a full export, please use the download button above.</p>
             </div>
 
         <div id="overallAveragesContainer">
@@ -771,7 +908,7 @@
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
                 // Updated Title and Description on empty state
-                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>${emptyMessage}`;
+                document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. For a full export, please use the download button above.</p>${emptyMessage}`;
                 document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>${emptyMessage}`;
                 return;
             }
@@ -913,7 +1050,7 @@
                         const weight = wei !== null ? wei.toFixed(1) : '';
                         
                         tableHTML += `
-                            <td style="text-align: left;">
+                            <td style="text-align: left;" data-person="${person}">
                                 <div class="detail-reading" style="font-weight: bold;">
                                     BP: ${bp || '<span class="no-data">N/A</span>'} | 
                                     Gl: ${glucose || '<span class="no-data">N/A</span>'} | 
@@ -948,6 +1085,14 @@
                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div><p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
                 return;
             }
+            
+            // Define all column labels for the data-label attribute
+            const labels = [
+                'Daily BP (Sys/Dia)', 'Weekly BP (Sys/Dia)', 'Monthly BP (Sys/Dia)',
+                'Daily Glucose (mg/dL)', 'Weekly Glucose (mg/dL)', 'Monthly Glucose (mg/dL)',
+                'Daily Weight (kg/lbs)', 'Weekly Weight (kg/lbs)', 'Monthly Weight (kg/lbs)'
+            ];
+
 
             let tableHTML = `
                 <table class="data-table">
@@ -979,15 +1124,15 @@
                 tableHTML += `
                     <tr>
                         <th>${person}</th>
-                        <td>${formatBP(results.systole.day, results.diastole.day)}</td>
-                        <td>${formatBP(results.systole.week, results.diastole.week)}</td>
-                        <td>${formatBP(results.systole.month, results.diastole.month)}</td>
-                        <td>${formatMetric(results.glucose.day)}</td>
-                        <td>${formatMetric(results.glucose.week)}</td>
-                        <td>${formatMetric(results.glucose.month)}</td>
-                        <td>${formatMetric(results.weight.day)}</td>
-                        <td>${formatMetric(results.weight.week)}</td>
-                        <td>${formatMetric(results.weight.month)}</td>
+                        <td data-label="${labels[0]}">${formatBP(results.systole.day, results.diastole.day)}</td>
+                        <td data-label="${labels[1]}">${formatBP(results.systole.week, results.diastole.week)}</td>
+                        <td data-label="${labels[2]}">${formatBP(results.systole.month, results.diastole.month)}</td>
+                        <td data-label="${labels[3]}">${formatMetric(results.glucose.day)}</td>
+                        <td data-label="${labels[4]}">${formatMetric(results.glucose.week)}</td>
+                        <td data-label="${labels[5]}">${formatMetric(results.glucose.month)}</td>
+                        <td data-label="${labels[6]}">${formatMetric(results.weight.day)}</td>
+                        <td data-label="${labels[7]}">${formatMetric(results.weight.week)}</td>
+                        <td data-label="${labels[8]}">${formatMetric(results.weight.month)}</td>
                     </tr>
                 `;
             });
@@ -998,7 +1143,7 @@
             container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
         }
         
-        // --- DISPLAY 3: Detailed 30-Day History Table (UPDATED TITLE/DESC) ---
+        // --- DISPLAY 3: Detailed 30-Day History Table (UPDATED TITLE/DESC & MOBILE) ---
         function displayDetailedHistory(readingsByPerson) {
             const container = document.getElementById('detailedHistoryContainer');
             
@@ -1021,7 +1166,7 @@
 
             if (personNames.size === 0 || uniqueDates.length === 0) {
                  // Updated Title and Description on empty state
-                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
+                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. For a full export, please use the download button above.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
                  return;
             }
 
@@ -1061,6 +1206,11 @@
                     const key = `${date}_${person}`;
                     const r = detailedHistoryDataCache[key]; // Use the cached map
                     
+                    // Generate dynamic data-labels for this row
+                    const labelBP = `${person} BP`;
+                    const labelGlu = `${person} Glucose`;
+                    const labelWei = `${person} Weight`;
+
                     if (r) {
                         // FIX: Explicitly check for null/undefined after Number() conversion.
                         const sys = Number(r.systole) || null;
@@ -1071,14 +1221,16 @@
                         const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        
                         tableHTML += `
-                            <td class="detail-reading">${bp}</td>
-                            <td class="detail-reading">${glucose}</td>
-                            <td class="detail-reading">${weight}</td>
+                            <td class="detail-reading" data-label="${labelBP}">${bp}</td>
+                            <td class="detail-reading" data-label="${labelGlu}">${glucose}</td>
+                            <td class="detail-reading" data-label="${labelWei}">${weight}</td>
                         `;
                     } else {
+                        // Empty cells for missing data
                         tableHTML += `
-                            <td colspan="3"><span class="no-data">-</span></td>
+                            <td colspan="3" data-label="${person} Readings"><span class="no-data">-</span></td>
                         `;
                     }
                 });
