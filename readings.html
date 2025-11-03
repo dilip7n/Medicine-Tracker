@@ -7,377 +7,60 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
     <style>
         /* Global & Reset */
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 1200px; 
-            margin: 0 auto;
-            background-color: #f7f9fc;
-        }
-
-        h1 {
-            color: #1a4f78;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 10px;
-        }
-
-        /* Controls and Inputs */
-        .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
-        }
-        
-        .controls label {
-            font-weight: bold;
-            display: block;
-            margin-top: 5px;
-            color: #555;
-            margin-bottom: 5px;
-        }
-        
-        .controls input[type="date"],
-        .controls input[type="time"],
-        .controls input[type="number"],
-        .controls input[type="text"],
-        .controls select,
-        #personSelect {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        /* GRID FIXES for Alignment */
-        .input-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            margin-bottom: 15px;
-            align-items: start;
-        }
-        
-        /* Person Input Group Styling */
-        .person-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        #personCustomInput {
-            margin-top: 0;
-            display: none;
-        }
-
-        /* Buttons */
-        button {
-            padding: 10px 20px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
-        }
-
-        .add {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .update {
-            background: #FF9800; /* Orange for Update */
-            color: white;
-            display: none; /* Hidden by default */
-        }
-        
-        /* New Table Download Button Style */
-        .table-export-btn {
-            background: #2196F3; /* Light Blue for table export */
-            color: white;
-            padding: 8px 15px;
-            font-size: 14px;
-            margin-top: 10px;
-            float: right;
-            white-space: nowrap;
-        }
-        
-        .export-btn {
-            background: #007bff; /* Blue for full export */
-            color: white;
-            margin-top: 15px;
-        }
-
-        .logout-btn {
-            background: #f44336;
-            color: white;
-            padding: 5px 15px;
-            font-size: 14px;
-        }
-        
-        /* --- TABLES STYLES (Applies to all new tables) --- */
-        #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer {
-            margin-top: 30px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            /* Remove overflow-x: auto; here to force responsive behavior */
-        }
-
-        .data-table {
-            width: 100%;
-            min-width: 0; /* Important for mobile wrap */
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        .data-table th, .data-table td {
-            padding: 12px 10px;
-            border: 1px solid #eee;
-            text-align: center;
-            font-size: 0.9em; 
-        }
-        
-        .data-table thead th {
-            background-color: #1a4f78; 
-            color: white;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        
-        .data-table thead tr:nth-child(2) th {
-            background-color: #007bff; /* Blue secondary header */
-            color: white;
-        }
-
-        .data-table tbody th {
-            text-align: left;
-            background-color: #f0f8ff; 
-            font-weight: bold;
-        }
-
-        .data-table tr:nth-child(even) {
-            background-color: #f7f9fc;
-        }
-
-        .avg-bp, .avg-reading {
-            white-space: nowrap;
-            font-weight: bold;
-        }
-        
-        .no-data {
-            color: #999;
-            font-style: italic;
-        }
-        
-        /* Increased font size for Today's individual readings */
-        #todayAveragesContainer .detail-reading {
-            font-size: 1.0em; 
-        }
-
-        /* Auth Styles */
-        #authContainer {
-            max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px;
-        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; background-color: #f7f9fc; }
+        h1 { color: #1a4f78; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
+        .controls label { font-weight: bold; display: block; margin-top: 5px; color: #555; margin-bottom: 5px; }
+        .controls input[type="date"], .controls input[type="time"], .controls input[type="number"], .controls input[type="text"], .controls select, #personSelect { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 15px; align-items: start; }
+        .person-input-group { display: flex; flex-direction: column; gap: 5px; }
+        #personCustomInput { margin-top: 0; display: none; }
+        button { padding: 10px 20px; margin-top: 10px; cursor: pointer; font-size: 16px; border: none; border-radius: 4px; }
+        .add { background: #4CAF50; color: white; }
+        .update { background: #FF9800; color: white; display: none; }
+        .table-export-btn { background: #2196F3; color: white; padding: 8px 15px; font-size: 14px; margin-top: 10px; float: right; white-space: nowrap; }
+        .export-btn { background: #007bff; color: white; margin-top: 15px; }
+        .logout-btn { background: #f44336; color: white; padding: 5px 15px; font-size: 14px; }
+        #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer { margin-top: 30px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); }
+        .data-table { width: 100%; min-width: 0; border-collapse: collapse; margin-top: 15px; }
+        .data-table th, .data-table td { padding: 12px 10px; border: 1px solid #eee; text-align: center; font-size: 0.9em; }
+        .data-table thead th { background-color: #1a4f78; color: white; font-weight: bold; white-space: nowrap; }
+        .data-table thead tr:nth-child(2) th { background-color: #007bff; color: white; }
+        .data-table tbody th { text-align: left; background-color: #f0f8ff; font-weight: bold; }
+        .data-table tr:nth-child(even) { background-color: #f7f9fc; }
+        .avg-bp, .avg-reading { white-space: nowrap; font-weight: bold; }
+        .no-data { color: #999; font-style: italic; }
+        #authContainer { max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px; }
         .signup-fields { display: none; }
         #authContainer.signup-mode .signup-fields { display: block; }
-        
-        /* New MFA Styles */
-        #mfaContainer {
-            max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px;
-            display: none; /* Hidden by default */
-        }
-        /* NEW ENROLLMENT STYLES */
-        #enrollMfaContainer {
-            max-width:400px; margin:50px auto; padding:30px; background:#fff3e0; border-radius:10px;
-            display: none; /* Hidden by default */
-        }
-        /* ----------------------- */
-        #recaptcha-container {
-            /* Hide the reCAPTCHA box if using 'invisible' size */
-            margin-top: 10px;
-        }
-
-        /* Navigation Link Style */
-        .nav-link {
-            text-decoration: none;
-            color: white;
-            font-weight: bold;
-            margin-left: 15px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            background: #2196F3;
-            transition: background 0.2s;
-        }
-        .nav-link:hover {
-            background: #0d47a1;
-        }
-        /* Action Buttons within Tables */
-        .action-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 3px 6px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-            margin-left: 5px;
-            white-space: nowrap; /* Prevent buttons from wrapping */
-        }
-        .edit-btn {
-            background-color: #4CAF50; /* Green for Edit */
-        }
-        .action-btn:hover {
-            opacity: 0.8;
-        }
-        
+        #mfaContainer { max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px; display: none; }
+        #enrollMfaContainer { max-width:400px; margin:50px auto; padding:30px; background:#fff3e0; border-radius:10px; display: none; }
+        #recaptcha-container { margin-top: 10px; }
+        .nav-link { text-decoration: none; color: white; font-weight: bold; margin-left: 15px; padding: 8px 12px; border-radius: 4px; background: #2196F3; transition: background 0.2s; }
+        .nav-link:hover { background: #0d47a1; }
+        .action-btn { background-color: #f44336; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-size: 0.8em; margin-left: 5px; white-space: nowrap; }
+        .edit-btn { background-color: #4CAF50; }
+        .action-btn:hover { opacity: 0.8; }
         /* --- MOBILE RESPONSIVENESS: CARD/LIST VIEW --- */
         @media screen and (max-width: 768px) {
-            
-            /* General Layout Adjustments */
             body { padding: 10px; }
-            .input-grid { grid-template-columns: 1fr; } /* Stack input fields */
-
-            /* Table Wrapper - Ensure tables don't force a scroll */
-            #overallAveragesContainer, #detailedHistoryContainer {
-                padding: 10px;
-            }
-
-            /* Hiding Headers and Reformatting */
-            .data-table {
-                border: 0;
-            }
-            .data-table thead, .data-table thead tr {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                padding: 0;
-                margin: -1px;
-                overflow: hidden;
-                clip: rect(0, 0, 0, 0);
-                border: 0;
-            }
-
-            /* Transform rows into cards */
-            .data-table tr {
-                display: block;
-                margin-bottom: 15px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                background-color: #fff;
-            }
-            
-            /* Treat Person/Date header rows specially */
-            .data-table tbody th {
-                display: block;
-                text-align: center;
-                border: none;
-                border-bottom: 1px solid #ccc;
-                background-color: #1a4f78;
-                color: white;
-                font-size: 1.1em;
-                padding: 10px;
-                border-radius: 8px 8px 0 0;
-            }
-            
-            /* Transform cells into block-level elements */
-            .data-table td {
-                display: block;
-                text-align: right;
-                border: none;
-                border-bottom: 1px dotted #ddd;
-                position: relative;
-                padding-left: 50%; /* Make room for the pseudo-element label */
-            }
-
-            /* Insert the original header content as a label using data-label attribute */
-            .data-table td::before {
-                content: attr(data-label) ":";
-                position: absolute;
-                left: 10px;
-                width: 45%;
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: bold;
-                color: #555;
-            }
-            
-            .data-table tr:nth-child(even) {
-                background-color: #fff; /* Reset zebra striping for cards */
-            }
-            
-            /* Today's Readings Table Specific adjustments (less severe transformation) */
-            #todayAveragesContainer .data-table {
-                 min-width: unset;
-            }
-            #todayAveragesContainer .data-table thead, 
-            #todayAveragesContainer .data-table thead tr {
-                display: none; /* Hide all table headers for this specific layout */
-                position: static;
-            }
-            #todayAveragesContainer .data-table tbody tr {
-                border: none;
-                box-shadow: none;
-                margin-bottom: 0;
-                display: flex; /* Make row a flex container */
-                flex-wrap: wrap;
-                border-bottom: 1px solid #e0e0e0;
-                padding: 10px 0;
-                background-color: transparent !important;
-            }
-            #todayAveragesContainer .data-table tbody th {
-                /* Time column */
-                flex: 0 0 100%;
-                text-align: left;
-                background-color: transparent;
-                color: #1a4f78;
-                border: none;
-                font-size: 1.1em;
-                padding: 5px 10px;
-                border-bottom: 1px solid #ccc;
-            }
-            #todayAveragesContainer .data-table tbody td {
-                /* Reading data cells */
-                flex: 1 1 50%; /* Allow 2 columns of readings per row */
-                text-align: left;
-                padding-left: 10px;
-                border: none;
-                border-bottom: none;
-                min-width: 50%;
-                padding-left: 0;
-            }
-            #todayAveragesContainer .data-table tbody td:before {
-                content: attr(data-person) ":"; /* Use person name as label */
-                position: static;
-                width: auto;
-                padding-right: 5px;
-                font-weight: normal;
-                color: #1a4f78;
-            }
-            #todayAveragesContainer .detail-reading {
-                display: block;
-                line-height: 1.4;
-            }
-            .action-btn {
-                margin-top: 5px;
-                margin-right: 5px;
-            }
-
+            .input-grid { grid-template-columns: 1fr; } 
+            #overallAveragesContainer, #detailedHistoryContainer { padding: 10px; }
+            .data-table { border: 0; }
+            .data-table thead, .data-table thead tr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+            .data-table tr { display: block; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); background-color: #fff; }
+            .data-table tbody th { display: block; text-align: center; border: none; border-bottom: 1px solid #ccc; background-color: #1a4f78; color: white; font-size: 1.1em; padding: 10px; border-radius: 8px 8px 0 0; }
+            .data-table td { display: block; text-align: right; border: none; border-bottom: 1px dotted #ddd; position: relative; padding-left: 50%; }
+            .data-table td::before { content: attr(data-label) ":"; position: absolute; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; color: #555; }
+            .data-table tr:nth-child(even) { background-color: #fff; } 
+            #todayAveragesContainer .data-table thead, #todayAveragesContainer .data-table thead tr { display: none; position: static; }
+            #todayAveragesContainer .data-table tbody tr { border: none; box-shadow: none; margin-bottom: 0; display: flex; flex-wrap: wrap; border-bottom: 1px solid #e0e0e0; padding: 10px 0; background-color: transparent !important; }
+            #todayAveragesContainer .data-table tbody th { flex: 0 0 100%; text-align: left; background-color: transparent; color: #1a4f78; border: none; font-size: 1.1em; padding: 5px 10px; border-bottom: 1px solid #ccc; }
+            #todayAveragesContainer .data-table tbody td { flex: 1 1 50%; text-align: left; padding-left: 0; border: none; border-bottom: none; min-width: 50%; }
+            #todayAveragesContainer .data-table tbody td:before { content: attr(data-person) ":"; position: static; width: auto; padding-right: 5px; font-weight: normal; color: #1a4f78; }
+            #todayAveragesContainer .detail-reading { display: block; line-height: 1.4; }
+            .action-btn { margin-top: 5px; margin-right: 5px; }
         }
     </style>
 </head>
@@ -517,7 +200,6 @@
         window.exportFullHistory = exportFullHistory; 
         window.exportDetailedHistory = exportDetailedHistory; 
         window.exportOverallAverages = exportOverallAverages; 
-        
         // --- NEW MFA GLOBAL FUNCTIONS ---
         window.resolveMfaLogin = resolveMfaLogin;
         window.startMfaEnrollment = startMfaEnrollment;
@@ -525,26 +207,28 @@
 
 
         // Import Firebase modules
+        // CRITICAL FIX: Ensure correct v9 module paths are used
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
         import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         
-        // --- UPDATED AUTH IMPORTS FOR MFA ---
         import { 
             getAuth, 
             signInWithEmailAndPassword, 
             createUserWithEmailAndPassword, 
             onAuthStateChanged, 
             signOut,
-            PhoneAuthProvider, // New
-            multiFactor, // New
+            PhoneAuthProvider,
+            multiFactor,
             updateProfile
         } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
-        // Need to import the standard namespace for RecaptchaVerifier
+        
+        // NOTE: We keep the auth-compat import for RecaptchaVerifier as it's cleaner than v9's standalone implementation
         import firebase from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js'; 
 
 
         // =========================================================================
         // *** CRITICAL: REPLACE WITH YOUR ACTUAL FIREBASE CONFIGURATION ***
+        // If these are incorrect or missing, the app will not run.
         // =========================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
@@ -553,3 +237,836 @@
             projectId: "YOUR_PROJECT_ID",
             storageBucket: "YOUR_PROJECT_ID.appspot.com",
             messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // =========================================================================
+
+
+        // Initialize Firebase
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            auth = getAuth(app);
+            console.log("Firebase initialized successfully.");
+        } catch (e) {
+            console.error("FIREBASE INITIALIZATION FAILED:", e);
+            document.getElementById('authError').textContent = 'Initialization failed. Check your Firebase config and the browser console for errors.';
+            // Hide everything if initialization fails to prevent phantom UI
+            document.getElementById('authContainer').style.display = 'none';
+            return; 
+        }
+
+        let currentUser = null;
+        let allReadings = [];
+        let allPersonAveragesCache = {}; // Cache for overall averages
+        let detailedHistoryDataCache = {}; // Cache for detailed history data
+        let personNames = new Set();
+        let currentPerson = '';
+        const today = new Date();
+        document.getElementById('recordDate').value = today.toISOString().split('T')[0];
+        document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); 
+        const todayDateString = today.toISOString().split('T')[0];
+
+        // --- MFA VARIABLES ---
+        let recaptchaVerifier = null;
+        let mfaResolver = null; 
+        let verificationId = null; 
+        let enrollmentSession = null; 
+
+        // --- MFA: Setup Invisible reCAPTCHA ---
+        function setupRecaptcha() {
+            if (recaptchaVerifier) {
+                if (window.grecaptcha && recaptchaVerifier.widgetId !== undefined) {
+                    window.grecaptcha.reset(recaptchaVerifier.widgetId);
+                }
+                recaptchaVerifier = null; 
+            }
+
+            recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                'size': 'invisible', 
+                'callback': (response) => {
+                    // reCAPTCHA solved automatically in invisible mode
+                },
+                'expired-callback': () => {
+                    document.getElementById('authError').textContent = 'reCAPTCHA expired. Please refresh.';
+                }
+            }, auth);
+
+            recaptchaVerifier.render();
+        }
+
+
+        // --- UTILITY: Date Formatting (DD-MMM-YY) ---
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString + 'T00:00:00'); 
+            
+            const day = date.getDate().toString().padStart(2, '0');
+            const year = date.getFullYear().toString().slice(-2);
+            
+            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const month = monthNames[date.getMonth()];
+
+            return `${day}-${month}-${year}`;
+        }
+        
+        // --- AUTH FUNCTIONS (Modified) ---
+
+        function toggleSignupMode() {
+            const container = document.getElementById('authContainer');
+            const toggleBtn = document.getElementById('signupToggleBtn');
+            const loginBtn = document.getElementById('loginBtn');
+            const isSignupMode = container.classList.contains('signup-mode');
+
+            if (isSignupMode) {
+                container.classList.remove('signup-mode');
+                toggleBtn.textContent = 'Sign Up';
+                toggleBtn.onclick = toggleSignupMode;
+                loginBtn.onclick = login;
+            } else {
+                container.classList.add('signup-mode');
+                toggleBtn.textContent = 'Register';
+                toggleBtn.onclick = signup;
+                loginBtn.onclick = () => { container.classList.remove('signup-mode'); login(); };
+            }
+            document.getElementById('authError').textContent = '';
+            setupRecaptcha();
+        }
+        
+        async function signup() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = '';
+            
+            if (!name || !email || !password || password !== confirmPassword) {
+                errorEl.textContent = 'Please fill out all fields and ensure passwords match.';
+                return;
+            }
+            
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: name });
+                currentUser = userCredential.user;
+                // The onAuthStateChanged listener will call showApp()
+            } catch (error) {
+                errorEl.textContent = 'Signup failed: ' + error.message;
+                setupRecaptcha();
+            }
+        }
+
+        function logout() {
+            signOut(auth).catch((error) => {
+                console.error("Logout error:", error);
+            });
+        }
+        
+        // --- LOGIN & MFA FUNCTIONS (Corrected) ---
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = '';
+            
+            if (!email || !password) { errorEl.textContent = 'Please enter email and password'; return; }
+            
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user;
+                showApp(); 
+
+            } catch (error) {
+                if (error.code === 'auth/multi-factor-auth-required') {
+                    
+                    mfaResolver = error.resolver;
+                    const phoneFactor = mfaResolver.hints[0]; 
+                    
+                    try {
+                        // Use PhoneAuthProvider to send SMS and resolve reCAPTCHA
+                        verificationId = await PhoneAuthProvider.verifyPhoneNumber(
+                            phoneFactor.phoneNumber,
+                            recaptchaVerifier 
+                        );
+                        
+                        document.getElementById('authContainer').style.display = 'none';
+                        document.getElementById('mfaContainer').style.display = 'block';
+                        document.getElementById('mfaInstructions').textContent = `Code sent to ${phoneFactor.phoneNumber}. Please enter it below.`;
+                        document.getElementById('mfaError').textContent = '';
+                        
+                    } catch (recaptchaError) {
+                        console.error("MFA SMS send failed:", recaptchaError);
+                        errorEl.textContent = 'Verification failed. Please retry login.';
+                        setupRecaptcha();
+                    }
+                } else {
+                    errorEl.textContent = 'Login failed: ' + error.message;
+                    setupRecaptcha();
+                }
+            }
+        }
+        
+        async function resolveMfaLogin(smsCode) {
+            const errorEl = document.getElementById('mfaError');
+            errorEl.textContent = '';
+            const verifyBtn = document.querySelector('#mfaContainer button');
+            
+            if (!mfaResolver || !verificationId || !smsCode) { 
+                errorEl.textContent = 'Verification process interrupted. Please try logging in again.';
+                return; 
+            }
+            
+            verifyBtn.textContent = 'Verifying...';
+            verifyBtn.disabled = true;
+
+            try {
+                const phoneAuthCredential = PhoneAuthProvider.credential(
+                    verificationId, 
+                    smsCode
+                );
+
+                const userCredential = await mfaResolver.resolveSignIn(phoneAuthCredential);
+                currentUser = userCredential.user;
+                
+                document.getElementById('mfaContainer').style.display = 'none';
+                showApp();
+
+                mfaResolver = null;
+                verificationId = null;
+                verifyBtn.textContent = 'Verify and Login';
+                verifyBtn.disabled = false;
+
+            } catch (error) {
+                console.error("MFA Login Resolution Failed:", error);
+                errorEl.textContent = "2FA code incorrect or expired. Please check the code and try again.";
+                verifyBtn.textContent = 'Verify and Login';
+                verifyBtn.disabled = false;
+            }
+        }
+        
+        async function startMfaEnrollment() {
+            const phoneNumber = document.getElementById('enrollPhoneNumber').value;
+            const errorEl = document.getElementById('enrollError');
+            const enrollBtn = document.querySelector('#enrollMfaContainer button');
+            
+            errorEl.textContent = '';
+            
+            const phoneRegex = /^\+[1-9]\d{1,14}$/;
+            if (!phoneNumber || !currentUser || !phoneRegex.test(phoneNumber)) {
+                errorEl.textContent = 'Please enter a valid phone number, including country code (e.g., +15551234567).';
+                return;
+            }
+
+            enrollBtn.textContent = 'Sending...';
+            enrollBtn.disabled = true;
+
+            try {
+                enrollmentSession = await multiFactor(currentUser).startEnrollment(
+                    { phoneNumber: phoneNumber },
+                    recaptchaVerifier
+                );
+                
+                document.getElementById('enrollMfaContainer').style.display = 'none';
+                document.getElementById('mfaContainer').style.display = 'block';
+                document.getElementById('mfaInstructions').textContent = `Verification code sent to ${phoneNumber}. Please enter it to complete security setup.`;
+                
+                enrollBtn.textContent = 'Send Verification Code';
+                enrollBtn.disabled = false;
+
+                document.querySelector('#mfaContainer button').onclick = () => completeMfaEnrollment(document.getElementById('mfaSmsCode').value);
+
+            } catch (error) {
+                console.error("MFA Enrollment Failed:", error);
+                errorEl.textContent = "Failed to send code: " + error.message;
+                enrollBtn.textContent = 'Send Verification Code';
+                enrollBtn.disabled = false;
+                setupRecaptcha();
+            }
+        }
+
+        async function completeMfaEnrollment(smsCode) {
+            const errorEl = document.getElementById('mfaError');
+            const verifyBtn = document.querySelector('#mfaContainer button');
+            errorEl.textContent = '';
+            
+            if (!enrollmentSession || !smsCode) {
+                errorEl.textContent = 'Verification process interrupted. Please try again.';
+                return;
+            }
+
+            verifyBtn.textContent = 'Verifying...';
+            verifyBtn.disabled = true;
+
+            try {
+                const phoneAuthCredential = PhoneAuthProvider.credential(
+                    enrollmentSession.verificationId, 
+                    smsCode
+                );
+
+                await multiFactor(currentUser).enroll(phoneAuthCredential);
+
+                enrollmentSession = null;
+                document.getElementById('mfaSmsCode').value = '';
+                
+                verifyBtn.onclick = () => resolveMfaLogin(document.getElementById('mfaSmsCode').value);
+                verifyBtn.textContent = 'Verify and Login';
+                verifyBtn.disabled = false;
+
+                showApp();
+
+            } catch (error) {
+                console.error("MFA Enrollment Completion Failed:", error);
+                errorEl.textContent = "2FA code incorrect or expired. Please check the code and try again.";
+                verifyBtn.textContent = 'Verify and Login';
+                verifyBtn.disabled = false;
+            }
+        }
+        
+        // --- CORE UI/AUTH MANAGEMENT ---
+
+        function showApp() {
+            if (!currentUser) {
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('appContainer').style.display = 'none';
+                return;
+            }
+            
+            const isMfaEnrolled = currentUser.multiFactor.enrolledFactors.length > 0;
+
+            if (!isMfaEnrolled) {
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'none';
+                document.getElementById('mfaContainer').style.display = 'none';
+                document.getElementById('enrollMfaContainer').style.display = 'block'; 
+                
+                setupRecaptcha(); 
+                return; 
+            }
+
+            document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('enrollMfaContainer').style.display = 'none';
+            document.getElementById('mfaContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            
+            loadReadings(currentUser.uid); 
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                showApp(); 
+            } else {
+                document.getElementById('authContainer').style.display = 'block';
+                document.getElementById('appContainer').style.display = 'none';
+                document.getElementById('enrollMfaContainer').style.display = 'none';
+                document.getElementById('mfaContainer').style.display = 'none';
+                setupRecaptcha(); 
+            }
+        });
+
+        // --- DATA MANAGEMENT FUNCTIONS (Fully Implemented) ---
+
+        function clearForm() {
+            document.getElementById('personSelect').value = '';
+            document.getElementById('personCustomInput').value = '';
+            document.getElementById('personCustomInput').style.display = 'none';
+            document.getElementById('systole').value = '';
+            document.getElementById('diastole').value = '';
+            document.getElementById('glucose').value = '';
+            document.getElementById('weight').value = '';
+            document.getElementById('readingIdToEdit').value = '';
+            
+            document.getElementById('addButton').style.display = 'inline-block';
+            document.getElementById('updateButton').style.display = 'none';
+
+            const now = new Date();
+            document.getElementById('recordDate').value = now.toISOString().split('T')[0];
+            document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5);
+        }
+
+        function populatePersonSelect() {
+            const selectEl = document.getElementById('personSelect');
+            const selectedValue = selectEl.value;
+            selectEl.innerHTML = '<option value="" disabled selected>Select a person...</option><option value="Custom">Add New Person...</option>';
+            
+            personNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                selectEl.appendChild(option);
+            });
+
+            // Attempt to restore selection
+            if (personNames.has(selectedValue) || selectedValue === 'Custom') {
+                selectEl.value = selectedValue;
+            } else if (currentPerson && personNames.has(currentPerson)) {
+                 selectEl.value = currentPerson;
+            } else {
+                 selectEl.value = '';
+            }
+            
+            handlePersonChange(selectEl.value);
+        }
+
+        function handlePersonChange(value) {
+            const customInput = document.getElementById('personCustomInput');
+            if (value === 'Custom') {
+                customInput.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                currentPerson = value;
+            }
+        }
+
+        function handleCustomNameBlur(value) {
+            const selectEl = document.getElementById('personSelect');
+            if (value && value.trim()) {
+                const normalizedName = value.trim();
+                personNames.add(normalizedName);
+                currentPerson = normalizedName;
+                populatePersonSelect();
+                selectEl.value = normalizedName;
+                document.getElementById('personCustomInput').style.display = 'none';
+            } else {
+                selectEl.value = ''; // Force selection back to default
+                document.getElementById('personCustomInput').style.display = 'none';
+            }
+        }
+
+        function getReadingData() {
+            const readingId = document.getElementById('readingIdToEdit').value;
+            const date = document.getElementById('recordDate').value;
+            const time = document.getElementById('recordTime').value;
+            const systolic = document.getElementById('systole').value;
+            const diastolic = document.getElementById('diastole').value;
+            const glucose = document.getElementById('glucose').value;
+            const weight = document.getElementById('weight').value;
+            
+            let person = document.getElementById('personSelect').value;
+            if (person === 'Custom') {
+                person = document.getElementById('personCustomInput').value.trim();
+            }
+
+            if (!person || !date || !time) {
+                alert("Please select a person, date, and time.");
+                return null;
+            }
+            
+            const timestamp = new Date(`${date}T${time}`).getTime();
+
+            return {
+                id: readingId || null,
+                person: person,
+                date: date,
+                time: time,
+                systolic: systolic ? parseFloat(systolic) : null,
+                diastolic: diastolic ? parseFloat(diastolic) : null,
+                glucose: glucose ? parseFloat(glucose) : null,
+                weight: weight ? parseFloat(weight) : null,
+                timestamp: timestamp
+            };
+        }
+
+        async function addReading() {
+            const data = getReadingData();
+            if (!data) return;
+
+            const newReadingRef = push(ref(db, `readings/${currentUser.uid}`));
+            await set(newReadingRef, {
+                ...data,
+                id: newReadingRef.key // Store the key inside the object
+            });
+
+            personNames.add(data.person);
+            clearForm();
+            alert("Reading added successfully!");
+        }
+
+        function editReading(id) {
+            const reading = allReadings.find(r => r.id === id);
+            if (!reading) return;
+
+            // Populate form
+            document.getElementById('readingIdToEdit').value = id;
+            document.getElementById('recordDate').value = reading.date;
+            document.getElementById('recordTime').value = reading.time;
+            document.getElementById('systole').value = reading.systolic || '';
+            document.getElementById('diastole').value = reading.diastolic || '';
+            document.getElementById('glucose').value = reading.glucose || '';
+            document.getElementById('weight').value = reading.weight || '';
+            
+            // Set person
+            if (personNames.has(reading.person)) {
+                document.getElementById('personSelect').value = reading.person;
+                document.getElementById('personCustomInput').style.display = 'none';
+            } else {
+                // Should not happen if data is clean, but safe fallback
+                document.getElementById('personSelect').value = 'Custom';
+                document.getElementById('personCustomInput').value = reading.person;
+                document.getElementById('personCustomInput').style.display = 'block';
+            }
+
+            // Toggle buttons
+            document.getElementById('addButton').style.display = 'none';
+            document.getElementById('updateButton').style.display = 'inline-block';
+        }
+
+        async function updateReading() {
+            const data = getReadingData();
+            if (!data || !data.id) return;
+
+            const readingRef = ref(db, `readings/${currentUser.uid}/${data.id}`);
+            await update(readingRef, data);
+
+            personNames.add(data.person);
+            clearForm();
+            alert("Reading updated successfully!");
+        }
+
+        async function deleteReading(id) {
+            if (confirm("Are you sure you want to delete this reading?")) {
+                const readingRef = ref(db, `readings/${currentUser.uid}/${id}`);
+                await remove(readingRef);
+                // loadReadings will handle UI refresh
+            }
+        }
+
+        // --- DATA LOADING & RENDERING ---
+
+        function loadReadings(userId) {
+            const readingsRef = ref(db, `readings/${userId}`);
+            onValue(readingsRef, (snapshot) => {
+                allReadings = [];
+                personNames.clear();
+
+                snapshot.forEach((childSnapshot) => {
+                    const reading = childSnapshot.val();
+                    // Ensure the ID is present
+                    if (!reading.id) {
+                        reading.id = childSnapshot.key;
+                        // Optional: Write back the ID to the DB to ensure data integrity
+                        // update(childSnapshot.ref, { id: reading.id });
+                    }
+                    allReadings.push(reading);
+                    if (reading.person) {
+                        personNames.add(reading.person);
+                    }
+                });
+                
+                // Sort readings by timestamp (most recent first)
+                allReadings.sort((a, b) => b.timestamp - a.timestamp);
+
+                populatePersonSelect();
+                renderTodayReadings();
+                renderDetailedHistory();
+                renderOverallAverages();
+            });
+        }
+
+        function renderTodayReadings() {
+            const container = document.getElementById('todayAveragesContainer');
+            const todayReadings = allReadings.filter(r => r.date === todayDateString);
+            
+            if (todayReadings.length === 0) {
+                container.innerHTML = `<h2>☀️ Today's Individual Readings</h2><p class="no-data">No readings recorded today.</p>`;
+                return;
+            }
+
+            let html = `<h2>☀️ Today's Individual Readings</h2>
+                        <table class="data-table">
+                        <thead>
+                            <tr><th rowspan="2">Time</th>`;
+            
+            // Generate header rows
+            const uniqueTodayPeople = Array.from(new Set(todayReadings.map(r => r.person)));
+            uniqueTodayPeople.forEach(p => {
+                html += `<th colspan="4" class="person-header">${p}</th>`;
+            });
+            html += `</tr><tr>`;
+            uniqueTodayPeople.forEach(() => {
+                html += `<th>BP</th><th>Glucose</th><th>Weight</th><th>Action</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            // Group by time, then map people to that time slot
+            const readingsByTime = todayReadings.reduce((acc, r) => {
+                acc[r.time] = acc[r.time] || {};
+                acc[r.time][r.person] = r;
+                return acc;
+            }, {});
+
+            // Sort times chronologically
+            const sortedTimes = Object.keys(readingsByTime).sort();
+
+            sortedTimes.forEach(time => {
+                html += `<tr><th scope="row" data-label="Time">${time}</th>`;
+                uniqueTodayPeople.forEach(person => {
+                    const reading = readingsByTime[time][person];
+                    if (reading) {
+                        const bp = reading.systolic && reading.diastolic ? `${reading.systolic}/${reading.diastolic}` : '<span class="no-data">--/--</span>';
+                        const glucose = reading.glucose ? `${reading.glucose}` : '<span class="no-data">--</span>';
+                        const weight = reading.weight ? `${reading.weight}` : '<span class="no-data">--</span>';
+                        html += `
+                            <td data-label="BP" data-person="${person}" class="detail-reading avg-bp">${bp}</td>
+                            <td data-label="Glucose (mg/dL)" data-person="${person}" class="detail-reading">${glucose}</td>
+                            <td data-label="Weight (kg/lbs)" data-person="${person}" class="detail-reading">${weight}</td>
+                            <td data-label="Action" data-person="${person}">
+                                <button class="action-btn edit-btn" onclick="editReading('${reading.id}')">Edit</button>
+                                <button class="action-btn" onclick="deleteReading('${reading.id}')">Del</button>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td colspan="4" class="no-data">N/A</td>`;
+                    }
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function renderDetailedHistory() {
+            const container = document.getElementById('detailedHistoryContainer');
+            const uniquePeople = Array.from(personNames);
+            
+            // Filter and find the latest reading per person per day (last 30 days)
+            const thirtyDaysAgo = today.getTime() - (30 * 24 * 60 * 60 * 1000);
+            const filteredReadings = allReadings.filter(r => r.timestamp >= thirtyDaysAgo);
+
+            // Group by Date -> Person -> Latest Reading
+            const dailyLatestReadings = filteredReadings.reduce((acc, reading) => {
+                const dateKey = reading.date;
+                const personKey = reading.person;
+                
+                if (!acc[dateKey]) acc[dateKey] = {};
+                
+                // Only keep the latest reading for this person on this day
+                if (!acc[dateKey][personKey] || reading.timestamp > acc[dateKey][personKey].timestamp) {
+                    acc[dateKey][personKey] = reading;
+                }
+                return acc;
+            }, {});
+
+            if (Object.keys(dailyLatestReadings).length === 0) {
+                container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2>
+                    <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
+                    </div>
+                    <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. For a full export, please use the download button above.</p>
+                    <p class="no-data" style="text-align:center;">No recent reading history found.</p>`;
+                return;
+            }
+
+            // Sort dates descending
+            const sortedDates = Object.keys(dailyLatestReadings).sort().reverse();
+            
+            // Generate Detailed History Table
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2>
+                    <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
+                    </div>
+                    <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. For a full export, please use the download button above.</p>
+                    <div style="overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th rowspan="2">Date</th>`;
+            
+            uniquePeople.forEach(p => {
+                html += `<th colspan="3">${p}</th>`;
+            });
+            html += `</tr><tr>`;
+            uniquePeople.forEach(() => {
+                html += `<th>BP</th><th>Glucose</th><th>Weight</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            detailedHistoryDataCache = {}; // Reset cache for export
+
+            sortedDates.forEach(date => {
+                html += `<tr><th scope="row">${formatDate(date)}</th>`;
+                detailedHistoryDataCache[date] = { date: formatDate(date) }; // Store data for export
+
+                uniquePeople.forEach(person => {
+                    const reading = dailyLatestReadings[date][person];
+                    const bp = reading && reading.systolic && reading.diastolic ? `${reading.systolic}/${reading.diastolic}` : '<span class="no-data">--/--</span>';
+                    const glucose = reading && reading.glucose !== null ? `${reading.glucose}` : '<span class="no-data">--</span>';
+                    const weight = reading && reading.weight !== null ? `${reading.weight}` : '<span class="no-data">--</span>';
+                    
+                    html += `<td data-label="${person} BP">${bp}</td>`;
+                    html += `<td data-label="${person} Glucose">${glucose}</td>`;
+                    html += `<td data-label="${person} Weight">${weight}</td>`;
+
+                    // Store data for export
+                    detailedHistoryDataCache[date][`${person} BP`] = reading && reading.systolic && reading.diastolic ? `${reading.systolic}/${reading.diastolic}` : '';
+                    detailedHistoryDataCache[date][`${person} Glucose`] = reading && reading.glucose !== null ? reading.glucose : '';
+                    detailedHistoryDataCache[date][`${person} Weight`] = reading && reading.weight !== null ? reading.weight : '';
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+
+        function renderOverallAverages() {
+            const container = document.getElementById('overallAveragesContainer');
+            allPersonAveragesCache = {}; // Reset cache
+
+            if (allReadings.length === 0) {
+                container.innerHTML = `<h2>📈 Overall Averages Summary</h2><p class="no-data">No data to calculate averages.</p>`;
+                return;
+            }
+
+            // Calculate averages grouped by person
+            const averages = Array.from(personNames).map(person => {
+                const personReadings = allReadings.filter(r => r.person === person);
+                
+                const bpSum = personReadings.reduce((sum, r) => sum + (r.systolic || 0) + (r.diastolic || 0), 0);
+                const bpCount = personReadings.filter(r => r.systolic && r.diastolic).length;
+                
+                const glucoseSum = personReadings.reduce((sum, r) => sum + (r.glucose || 0), 0);
+                const glucoseCount = personReadings.filter(r => r.glucose).length;
+
+                const weightSum = personReadings.reduce((sum, r) => sum + (r.weight || 0), 0);
+                const weightCount = personReadings.filter(r => r.weight).length;
+
+                const avgSystolic = bpCount > 0 ? (personReadings.reduce((sum, r) => sum + (r.systolic || 0), 0) / bpCount).toFixed(0) : '--';
+                const avgDiastolic = bpCount > 0 ? (personReadings.reduce((sum, r) => sum + (r.diastolic || 0), 0) / bpCount).toFixed(0) : '--';
+                const avgGlucose = glucoseCount > 0 ? (glucoseSum / glucoseCount).toFixed(1) : '--';
+                const avgWeight = weightCount > 0 ? (weightSum / weightCount).toFixed(1) : '--';
+
+                const totalReadings = personReadings.length;
+
+                allPersonAveragesCache[person] = {
+                    Person: person,
+                    'BP Readings': bpCount,
+                    'Avg Systolic': avgSystolic,
+                    'Avg Diastolic': avgDiastolic,
+                    'Glucose Readings': glucoseCount,
+                    'Avg Glucose (mg/dL)': avgGlucose,
+                    'Weight Readings': weightCount,
+                    'Avg Weight': avgWeight,
+                    'Total Records': totalReadings
+                };
+
+                return {
+                    person,
+                    avgSystolic,
+                    avgDiastolic,
+                    avgGlucose,
+                    avgWeight,
+                    totalReadings
+                };
+            });
+
+
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2>📈 Overall Averages Summary</h2>
+                        <button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button>
+                        </div>
+                        <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Person</th>
+                                    <th>Total Readings</th>
+                                    <th>Avg. BP (Sys/Dia)</th>
+                                    <th>Avg. Glucose (mg/dL)</th>
+                                    <th>Avg. Weight</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            averages.forEach(avg => {
+                const bpText = avg.avgSystolic !== '--' ? `<span class="avg-bp">${avg.avgSystolic}/${avg.avgDiastolic}</span>` : '<span class="no-data">N/A</span>';
+                const glucoseText = avg.avgGlucose !== '--' ? `<span class="avg-reading">${avg.avgGlucose}</span>` : '<span class="no-data">N/A</span>';
+                const weightText = avg.avgWeight !== '--' ? `<span class="avg-reading">${avg.avgWeight}</span>` : '<span class="no-data">N/A</span>';
+
+                html += `<tr>
+                            <td data-label="Person">${avg.person}</td>
+                            <td data-label="Total Readings">${avg.totalReadings}</td>
+                            <td data-label="Avg. BP">${bpText}</td>
+                            <td data-label="Avg. Glucose">${glucoseText}</td>
+                            <td data-label="Avg. Weight">${weightText}</td>
+                        </tr>`;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        // --- EXPORT FUNCTIONS (Fully Implemented) ---
+
+        function downloadCSV(data, filename) {
+            const csvData = data.map(row => 
+                Object.values(row).map(value => {
+                    // Escape double quotes by doubling them, then enclose in double quotes
+                    const escapedValue = String(value).replace(/"/g, '""');
+                    return `"${escapedValue}"`;
+                }).join(',')
+            ).join('\n');
+            
+            const header = Object.keys(data[0]).map(h => `"${h}"`).join(',') + '\n';
+            const fullCSV = header + csvData;
+
+            const blob = new Blob([fullCSV], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportFullHistory() {
+            if (allReadings.length === 0) {
+                alert("No data to export.");
+                return;
+            }
+            
+            // Map data to a flat structure suitable for CSV
+            const exportData = allReadings.map(r => ({
+                Date: formatDate(r.date),
+                Time: r.time,
+                Person: r.person,
+                'Systolic (BP)': r.systolic || '',
+                'Diastolic (BP)': r.diastolic || '',
+                'Glucose (mg/dL)': r.glucose || '',
+                'Weight (kg/lbs)': r.weight || '',
+                Timestamp_ms: r.timestamp
+            }));
+
+            downloadCSV(exportData, 'health_tracker_full_history.csv');
+        }
+
+        function exportDetailedHistory() {
+             if (Object.keys(detailedHistoryDataCache).length === 0) {
+                alert("No 30-day history data to export. Please add some readings.");
+                return;
+            }
+
+            const exportArray = Object.values(detailedHistoryDataCache);
+            downloadCSV(exportArray, 'health_tracker_30day_summary.csv');
+        }
+
+        function exportOverallAverages() {
+             if (Object.keys(allPersonAveragesCache).length === 0) {
+                alert("No data to calculate averages for export.");
+                return;
+            }
+            
+            const exportArray = Object.values(allPersonAveragesCache);
+            downloadCSV(exportArray, 'health_tracker_overall_averages.csv');
+        }
+    </script>
+</body>
+</html>
