@@ -133,7 +133,8 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            overflow-x: auto;
+            /* CRITICAL: Allows horizontal scrolling */
+            overflow-x: auto; 
         }
 
         .data-table {
@@ -166,6 +167,7 @@
             text-align: left;
             background-color: #f0f8ff; 
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .data-table tr:nth-child(even) {
@@ -182,7 +184,7 @@
             font-style: italic;
         }
         
-        /* CRITICAL FIX: Increased font size for Today's individual readings */
+        /* Increased font size for Today's individual readings */
         #todayAveragesContainer .detail-reading {
             font-size: 1.0em; 
         }
@@ -225,6 +227,77 @@
         .action-btn:hover {
             opacity: 0.8;
         }
+        
+        /* --- NEW: MOBILE CARD VIEW & SCROLL ENHANCEMENTS (max-width: 768px) --- */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px; /* Smaller padding on small screens */
+            }
+            
+            h1, h2 {
+                text-align: left; /* Keep left alignment for better flow */
+            }
+
+            /* INPUT FORM CARD VIEW */
+            .controls .input-grid {
+                grid-template-columns: 1fr; 
+                gap: 15px; 
+            }
+
+            .controls .input-group {
+                background: #ffffff; 
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); 
+                border-left: 5px solid #1a4f78; 
+            }
+            
+            .controls #addButton, 
+            .controls #updateButton,
+            .controls .export-btn {
+                 width: 100%;
+                 margin-top: 10px;
+                 display: block; 
+                 margin-left: 0;
+            }
+            
+            .controls .export-btn {
+                float: none; 
+            }
+            
+            /* --- TABLE SCROLL FIXES --- */
+            .data-table {
+                /* Reduced min-width to attempt fitting more, but still force scroll */
+                min-width: 800px; 
+            }
+            
+            .data-table th, .data-table td {
+                padding: 6px 4px; /* Significantly reduced padding */
+                font-size: 0.75em; /* Smaller font size */
+                white-space: nowrap;
+            }
+            
+            /* Tighter display for the Averages summary (BP/Count) */
+            .data-table .avg-bp, .data-table .avg-reading {
+                font-size: 1em; /* Keep main numbers readable */
+            }
+            .data-table .avg-bp + span, .data-table .avg-reading + span {
+                /* Display the count (X R) on a new line or block to save horizontal space */
+                display: block; 
+                font-size: 0.7em; 
+                line-height: 1;
+            }
+
+            /* Today's Individual Readings: make action buttons smaller */
+            #todayAveragesContainer .detail-reading {
+                font-size: 0.8em; 
+            }
+            .action-btn {
+                padding: 2px 4px;
+                font-size: 0.7em;
+            }
+        }
+        /* --- END OF MOBILE CSS --- */
 
     </style>
 </head>
