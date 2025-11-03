@@ -206,8 +206,7 @@
         window.completeMfaEnrollment = completeMfaEnrollment;
 
 
-        // Import Firebase modules
-        // CRITICAL FIX: Ensure correct v9 module paths are used
+        // Import Firebase modules (via CDN for standalone HTML)
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js';
         import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         
@@ -227,17 +226,17 @@
 
 
         // =========================================================================
-        // *** CRITICAL: REPLACE WITH YOUR ACTUAL FIREBASE CONFIGURATION ***
-        // If these are incorrect or missing, the app will not run.
+        // *** CORRECTED FIREBASE CONFIGURATION ***
+        // This block uses the configuration you provided.
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY",
+            authDomain: "medicine-tracker-b90f2.firebaseapp.com",
+            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
+            projectId: "medicine-tracker-b90f2",
+            storageBucket: "medicine-tracker-b90f2.firebasestorage.app",
+            messagingSenderId: "230127910329",
+            appId: "1:230127910329:web:756789fcd3a1ac02948a68"
         };
         // =========================================================================
 
