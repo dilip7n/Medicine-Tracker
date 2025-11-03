@@ -33,7 +33,11 @@
             .display-desktop-only { display: none !important; }
             .display-mobile-only { display: block !important; }
             body { padding: 10px; }
-            .controls, #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer { padding: 15px 10px; }
+            /* Adjusted padding for mobile content containers */
+            .controls { padding: 15px; } 
+            #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer { 
+                padding: 0; /* Cards handle their own internal padding */
+            }
         }
 
         /* Controls and Inputs */
@@ -101,6 +105,7 @@
             font-size: 16px;
             border: none;
             border-radius: 4px;
+            transition: background 0.2s, opacity 0.2s;
         }
 
         .add {
@@ -241,139 +246,185 @@
             opacity: 0.8;
         }
 
-        /* --- CARD VIEW STYLES (Mobile < 768px) --- */
+        /* ---------------------------------------------------- */
+        /* --- WORD-CLASS CARD VIEW STYLES (Mobile < 768px) --- */
+        /* ---------------------------------------------------- */
         .card-container {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px; /* More breathing room */
             padding-top: 15px;
         }
 
         .card {
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 15px;
+            border-radius: 12px; /* Smoother corners */
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); /* Better shadow */
+            padding: 20px; /* More internal padding */
+            transition: transform 0.2s;
         }
-        
+
         /* 1. Today's Readings Card Style */
-        .person-card-today .today-reading-block {
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ddd;
-            border-left: 5px solid #2196F3; /* Prominent indicator */
-            border-radius: 4px;
-            background-color: #f9f9ff;
-        }
-        .person-card-today .reading-time {
+        .person-card-today .reading-header {
+            font-size: 1.2em;
             font-weight: bold;
             color: #1a4f78;
-            margin-bottom: 5px;
-            display: block;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
         }
-        .person-card-today .value-prominent {
+
+        .today-reading-block {
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f7f9fc; /* Light background for separation */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reading-time {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* KEY IMPROVEMENT: Aligned metrics using CSS Grid */
+        .reading-metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* Three equal columns for BP, Gl, W */
+            gap: 10px;
+            text-align: center;
+        }
+        
+        /* Ensure the first column (BP) starts left and last (Weight) ends right for max clarity */
+        .reading-metric-grid > div:first-child { text-align: left; }
+        .reading-metric-grid > div:last-child { text-align: right; }
+
+        .metric-label-mobile {
+            font-weight: normal;
+            font-size: 0.85em;
+            color: #555;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .value-prominent {
             font-size: 1.1em;
             font-weight: bold;
             color: #333;
             display: block;
         }
-
+        
         /* 2. Overall Averages Card Style */
         .person-card-average h3 {
+            font-size: 1.3em;
             margin-top: 0;
-            color: #007bff;
-            border-bottom: 2px solid #eee;
+            color: #1a4f78;
+            border-bottom: 2px solid #007bff;
             padding-bottom: 5px;
         }
+
         .metric-group {
-            margin-top: 10px;
-            border: 1px solid #f0f0f0;
-            padding: 8px;
-            border-radius: 4px;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f0f7ff; /* Light blue tint for metric group */
         }
+
         .metric-label {
             font-weight: bold;
             display: block;
-            background-color: #f7f9fc;
-            padding: 5px;
-            margin: -8px -8px 5px -8px;
-            border-bottom: 1px solid #e0e0e0;
+            font-size: 1.1em;
+            color: #1a4f78;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #cfe2ff; /* Soft separator */
+            padding-bottom: 5px;
         }
-        .data-point {
-            margin-bottom: 3px;
+
+        /* KEY IMPROVEMENT: Aligned period label and data point */
+        .average-row {
+            display: grid;
+            grid-template-columns: 80px 1fr; /* Label and Value */
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
             font-size: 0.95em;
         }
 
-        /* 3. Detailed History Card Style (The most complex requirement) */
-        
-        /* Date-wise Bifurcation */
+        .average-row:last-child {
+            border-bottom: none;
+        }
+
+        .period-label {
+            font-weight: 600;
+            color: #555;
+            text-align: left;
+        }
+
+        .data-point {
+            text-align: right; /* Values align right */
+            font-weight: bold;
+        }
+
+        /* 3. Detailed History Card Style */
         .date-header {
             background: #1a4f78;
             color: white;
-            padding: 10px 15px;
+            padding: 12px 15px;
             font-weight: bold;
-            border-radius: 6px 6px 0 0;
-            margin-top: 15px;
-            margin-bottom: -15px; /* Collapse margin with the first person card */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 1.1em;
+            border-radius: 8px;
+            margin-top: 25px;
+            margin-bottom: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             position: sticky;
             top: 0;
             z-index: 10;
         }
-        
-        /* Person-wise Bifurcation */
+
         .person-card-detailed {
             background: white;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
+            border-radius: 8px;
+            padding: 15px;
             margin-top: 15px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            /* Ensure the content aligns well within the card */
         }
-        
-        /* Clear visual separation for the second person onwards on the same date */
+
         .person-card-detailed:not(:first-of-type) {
-            border-left: 5px solid #ff5722; /* Strong orange bar for person separation */
-            background-color: #fffaf7; /* Light tint for person grouping */
+            border-left: 5px solid #007bff; /* Blue bar for person separation */
+            background-color: #f7f9fc; /* Very light tint for person grouping */
         }
 
         .person-card-detailed .person-header {
             font-weight: bold;
             color: #007bff;
+            font-size: 1.1em;
             border-bottom: 1px dashed #eee;
             padding-bottom: 5px;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
+        /* KEY IMPROVEMENT: Aligned metric label and value */
         .person-card-detailed .reading-row {
-            padding: 2px 0;
-            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between; /* Pushes label left, value right */
+            padding: 4px 0;
+            font-size: 0.95em;
+            border-bottom: 1px dotted #f0f0f0;
         }
+        .person-card-detailed .reading-row:last-child {
+             border-bottom: none;
+        }
+
         .person-card-detailed .reading-value {
             font-weight: bold;
             color: #333;
-        }
-
-
-        /* Auth Styles */
-        #authContainer {
-            max-width:400px; margin:50px auto; padding:30px; background:#f9f9f9; border-radius:10px;
-        }
-        .signup-fields { display: none; }
-        #authContainer.signup-mode .signup-fields { display: block; }
-
-        /* Navigation Link Style */
-        .nav-link {
-            text-decoration: none;
-            color: white;
-            font-weight: bold;
-            margin-left: 15px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            background: #2196F3;
-            transition: background 0.2s;
-        }
-        .nav-link:hover {
-            background: #0d47a1;
         }
 
     </style>
@@ -1118,12 +1169,12 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW ---
+            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
             
             personsWithData.forEach(person => {
                 mobileHTML += `<div class="person-card-today card">`;
-                mobileHTML += `<h3 class="person-header">${person}</h3>`;
+                mobileHTML += `<h3 class="reading-header">${person}</h3>`;
                 
                 allPersonTodayReadings[person].forEach(reading => {
                     const sys = Number(reading.systole) || null;
@@ -1137,9 +1188,13 @@
 
                     mobileHTML += `
                         <div class="today-reading-block">
-                            <span class="reading-time">${reading.time}</span>
-                            <span class="value-prominent">BP: ${bp} | Gl: ${glucose} | W: ${weight}</span>
-                            <div style="margin-top: 5px;">
+                            <span class="reading-time">Time: ${reading.time}</span>
+                            <div class="reading-metric-grid">
+                                <div><span class="metric-label-mobile">BP (S/D)</span><span class="value-prominent">${bp}</span></div>
+                                <div><span class="metric-label-mobile">Glucose</span><span class="value-prominent">${glucose}</span></div>
+                                <div><span class="metric-label-mobile">Weight</span><span class="value-prominent">${weight}</span></div>
+                            </div>
+                            <div style="margin-top: 10px; text-align: right; padding-top: 5px; border-top: 1px dashed #eee;">
                                 <button class="action-btn edit-btn" onclick="editReading('${reading.id}')">✏️ Edit</button>
                                 <button class="action-btn" onclick="deleteReading('${reading.id}')">❌ Delete</button>
                             </div>
@@ -1216,7 +1271,7 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW ---
+            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
             
             personsWithData.forEach(person => {
@@ -1224,23 +1279,26 @@
                 
                 mobileHTML += `<div class="person-card-average card">
                     <h3>${person}</h3>
+                    
                     <div class="metric-group">
                         <span class="metric-label">Blood Pressure (Sys/Dia mmHg)</span>
-                        <div class="data-point">Daily: <span class="reading-value">${formatBP(results.systole.day, results.diastole.day, true)}</span></div>
-                        <div class="data-point">Weekly: <span class="reading-value">${formatBP(results.systole.week, results.diastole.week, true)}</span></div>
-                        <div class="data-point">Monthly: <span class="reading-value">${formatBP(results.systole.month, results.diastole.month, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Daily</span><span class="data-point">${formatBP(results.systole.day, results.diastole.day, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Weekly</span><span class="data-point">${formatBP(results.systole.week, results.diastole.week, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Monthly</span><span class="data-point">${formatBP(results.systole.month, results.diastole.month, true)}</span></div>
                     </div>
+                    
                     <div class="metric-group">
                         <span class="metric-label">Glucose (mg/dL)</span>
-                        <div class="data-point">Daily: <span class="reading-value">${formatMetric(results.glucose.day, true)}</span></div>
-                        <div class="data-point">Weekly: <span class="reading-value">${formatMetric(results.glucose.week, true)}</span></div>
-                        <div class="data-point">Monthly: <span class="reading-value">${formatMetric(results.glucose.month, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Daily</span><span class="data-point">${formatMetric(results.glucose.day, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Weekly</span><span class="data-point">${formatMetric(results.glucose.week, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Monthly</span><span class="data-point">${formatMetric(results.glucose.month, true)}</span></div>
                     </div>
+                    
                     <div class="metric-group">
                         <span class="metric-label">Weight (kg/lbs)</span>
-                        <div class="data-point">Daily: <span class="reading-value">${formatMetric(results.weight.day, true)}</span></div>
-                        <div class="data-point">Weekly: <span class="reading-value">${formatMetric(results.weight.week, true)}</span></div>
-                        <div class="data-point">Monthly: <span class="reading-value">${formatMetric(results.weight.month, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Daily</span><span class="data-point">${formatMetric(results.weight.day, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Weekly</span><span class="data-point">${formatMetric(results.weight.week, true)}</span></div>
+                        <div class="average-row"><span class="period-label">Monthly</span><span class="data-point">${formatMetric(results.weight.month, true)}</span></div>
                     </div>
                 </div>`;
             });
@@ -1342,7 +1400,7 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW ---
+            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
 
             uniqueDates.forEach(date => {
@@ -1366,9 +1424,10 @@
                         // Person-wise Card
                         mobileHTML += `<div class="person-card-detailed">
                             <div class="person-header">${person}</div>
-                            <div class="reading-row">BP: <span class="reading-value">${bp}</span></div>
-                            <div class="reading-row">Glucose: <span class="reading-value">${glucose}</span></div>
-                            <div class="reading-row">Weight: <span class="reading-value">${weight}</span></div>
+                            <div class="reading-row"><span>Time:</span> <span class="reading-value">${r.time}</span></div>
+                            <div class="reading-row"><span>BP (Sys/Dia):</span> <span class="reading-value">${bp}</span></div>
+                            <div class="reading-row"><span>Glucose:</span> <span class="reading-value">${glucose}</span></div>
+                            <div class="reading-row"><span>Weight:</span> <span class="reading-value">${weight}</span></div>
                         </div>`;
                     }
                     // Skip if no reading for person/date
