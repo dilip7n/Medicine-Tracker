@@ -184,6 +184,29 @@
         .signup-fields { display: none; }
         #authContainer.signup-mode .signup-fields { display: block; }
 
+        /* MFA Enrollment Styles (New & Responsive, from PDF) */
+        #mfaEnrollContainer {
+            width: 95vw;
+            max-width: 400px;
+            margin: 12px auto;
+            padding: 18px;
+            background: #fff;
+            border-radius: 9px;
+            box-shadow: 0 5px 16px rgba(0,0,0,0.03);
+            border: 2px solid #ffc107; /* Keeping a border for visual distinction */
+        }
+
+        @media (max-width: 600px) {
+            #mfaEnrollContainer {
+                width: 99vw;
+                padding: 8px 2vw;
+            }
+            #recaptcha-enroll {
+                min-width: 95vw;
+                overflow-x: auto;
+            }
+        }
+        
         .nav-link {
             text-decoration: none;
             color: white;
@@ -230,12 +253,14 @@
         <div id="mfaError" style="color:red; margin-top:10px;"></div>
     </div>
 
-    <div id="mfaEnrollmentContainer" style="display:none; max-width:500px; margin:50px auto; padding:30px; background:#fff3cd; border:2px solid #ffc107; border-radius:10px;">
+    <div id="mfaEnrollContainer" style="display:none;">
         <h2>📱 Enable Two-Factor Authentication</h2>
         <p style="margin:15px 0; color:#856404;">For enhanced security, please set up two-factor authentication. You'll need to verify your phone number.</p>
         <input type="tel" id="enrollPhoneNumber" placeholder="Phone Number (with country code, e.g., +919876543210)" style="width:100%; padding:10px; margin:10px 0; box-sizing:border-box;">
-        <div id="recaptcha-container-enroll" style="display:flex; justify-content:center; margin:15px 0;"></div>
-        <button class="add" onclick="sendEnrollmentCode()" style="width:100%; margin:10px 0;">Send Verification Code</button>
+        
+        <div id="recaptcha-enroll" style="display:flex; justify-content:center; margin:15px 0;"></div>
+        
+        <button class="add" id="mfaSendBtn" onclick="sendEnrollCode()" style="width:100%; margin:10px 0;" disabled>Send Verification Code</button>
         
         <div id="enrollmentVerificationSection" style="display:none; margin-top:20px;">
             <input type="text" id="enrollVerificationCode" placeholder="6-digit code" maxlength="6" style="width:100%; padding:10px; margin:10px 0; box-sizing:border-box; font-size:18px; text-align:center; letter-spacing:5px;">
@@ -243,7 +268,7 @@
         </div>
         
         <button class="export-btn" onclick="skipMfaEnrollment()" style="width:100%; margin:10px 0;">Skip for Now</button>
-        <div id="enrollError" style="color:red; margin-top:10px;"></div>
+        <div id="mfaEnrollError" style="color:red; margin-top:10px;"></div>
     </div>
 
     <div id="appContainer" style="display:none;">
@@ -353,6 +378,8 @@
 
         let recaptchaVerifierAuth = null;
         let recaptchaVerifierEnroll = null;
+        let recaptchaWidgetId = null; // New variable for reCAPTCHA widget ID
+        let recaptchaEnrollReady = false; // New flag to track reCAPTCHA status
         let mfaResolver = null;
         let enrollmentVerificationId = null;
         let pendingUserForEnrollment = null;
@@ -510,7 +537,8 @@
                 })
                 .then(() => {
                     pendingUserForEnrollment = currentUser;
-                    showMfaEnrollment(phoneNumber);
+                    // UPDATED: Function call name
+                    showMfaEnroll(phoneNumber); 
                 })
                 .catch((error) => {
                     errorEl.textContent = 'Signup failed: ' + error.message;
@@ -527,9 +555,11 @@
                 onValue(profileRef, (snapshot) => {
                     const profile = snapshot.val();
                     if (profile && profile.phoneNumber) {
-                        showMfaEnrollment(profile.phoneNumber);
+                        // UPDATED: Function call name
+                        showMfaEnroll(profile.phoneNumber);
                     } else {
-                        showMfaEnrollment('');
+                        // UPDATED: Function call name
+                        showMfaEnroll('');
                     }
                 }, { onlyOnce: true });
             } else {
@@ -537,42 +567,60 @@
             }
         }
 
-        function showMfaEnrollment(phoneNumber) {
+        // UPDATED: Renamed function from showMfaEnrollment to showMfaEnroll
+        function showMfaEnroll(phoneNumber) {
             document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('mfaEnrollmentContainer').style.display = 'block';
+            // UPDATED: Container ID
+            document.getElementById('mfaEnrollContainer').style.display = 'block';
             document.getElementById('enrollPhoneNumber').value = phoneNumber || '';
             document.getElementById('enrollmentVerificationSection').style.display = 'none';
-            document.getElementById('enrollError').textContent = '';
+            // UPDATED: Error display ID
+            document.getElementById('mfaEnrollError').textContent = '';
 
-            if (!recaptchaVerifierEnroll) {
-                setTimeout(() => {
-                    try {
-                        recaptchaVerifierEnroll = new RecaptchaVerifier(auth, 'recaptcha-container-enroll', {
-                            size: 'normal',
-                            callback: () => {
-                                console.log('reCAPTCHA solved for enrollment');
-                            },
-                            'expired-callback': () => {
-                                console.log('reCAPTCHA expired');
-                                recaptchaVerifierEnroll = null;
-                            }
-                        });
-                        recaptchaVerifierEnroll.render().then(() => {
-                            console.log('reCAPTCHA rendered successfully');
-                        }).catch((error) => {
-                            console.error('reCAPTCHA render error:', error);
-                        });
-                    } catch (error) {
-                        console.error('Error initializing reCAPTCHA:', error);
-                        document.getElementById('enrollError').textContent = 'reCAPTCHA initialization failed. Please refresh the page.';
-                    }
-                }, 100);
+            // --- START: NEW reCAPTCHA Logic for stability (from PDF) ---
+            document.getElementById('mfaSendBtn').disabled = true;
+            recaptchaEnrollReady = false;
+
+            if (recaptchaVerifierEnroll) {
+                recaptchaVerifierEnroll.clear();
+                recaptchaVerifierEnroll = null;
             }
+            // --- END: NEW reCAPTCHA Logic ---
+
+            // Only create verifier once div exists and is shown, using the new recaptcha-enroll ID
+            setTimeout(() => {
+                try {
+                    recaptchaVerifierEnroll = new RecaptchaVerifier(auth, 'recaptcha-enroll', { // UPDATED: Container ID
+                        size: 'normal',
+                        callback: (response) => {
+                            console.log('reCAPTCHA solved for enrollment:', response);
+                            document.getElementById('mfaSendBtn').disabled = false; // ENABLE button
+                            recaptchaEnrollReady = true;
+                        },
+                        'expired-callback': () => {
+                            console.log('reCAPTCHA expired');
+                            document.getElementById('mfaSendBtn').disabled = true; // DISABLE button
+                            recaptchaEnrollReady = false;
+                        }
+                    });
+                    recaptchaWidgetId = recaptchaVerifierEnroll.render().then((widgetId) => {
+                        console.log('reCAPTCHA rendered successfully with ID:', widgetId);
+                        return widgetId;
+                    }).catch((error) => {
+                        console.error('reCAPTCHA render error:', error);
+                        document.getElementById('mfaEnrollError').textContent = 'reCAPTCHA initialization failed. Please refresh the page.'; // UPDATED: Error ID
+                    });
+                } catch (error) {
+                    console.error('Error initializing reCAPTCHA:', error);
+                    document.getElementById('mfaEnrollError').textContent = 'reCAPTCHA initialization failed. Please refresh the page.'; // UPDATED: Error ID
+                }
+            }, 100);
         }
 
-        function sendEnrollmentCode() {
+        // UPDATED: Renamed function from sendEnrollmentCode to sendEnrollCode
+        function sendEnrollCode() {
             const phoneNumber = document.getElementById('enrollPhoneNumber').value;
-            const errorEl = document.getElementById('enrollError');
+            const errorEl = document.getElementById('mfaEnrollError'); // UPDATED: Error ID
 
             if (!phoneNumber || !phoneNumber.startsWith('+')) {
                 errorEl.textContent = 'Please enter a valid phone number with country code (e.g., +919876543210).';
@@ -583,11 +631,14 @@
                 errorEl.textContent = 'User session expired. Please login again.';
                 return;
             }
-
-            if (!recaptchaVerifierEnroll) {
-                errorEl.textContent = 'reCAPTCHA not ready. Please wait a moment and try again.';
+            
+            // UPDATED: Check reCAPTCHA status
+            if (!recaptchaEnrollReady || !recaptchaVerifierEnroll) {
+                errorEl.textContent = 'reCAPTCHA not ready or verified. Please complete reCAPTCHA and try again.';
                 return;
             }
+
+            document.getElementById('mfaSendBtn').disabled = true; // Disable button immediately on send attempt
 
             multiFactor(currentUser).getSession()
                 .then((multiFactorSession) => {
@@ -612,16 +663,21 @@
                     console.error('Error sending enrollment code:', error);
                     errorEl.textContent = 'Failed to send code: ' + error.message;
                     
+                    // UPDATED: Clear and re-render reCAPTCHA on error
                     if (recaptchaVerifierEnroll) {
                         recaptchaVerifierEnroll.clear();
                         recaptchaVerifierEnroll = null;
+                        recaptchaEnrollReady = false;
                     }
+                    document.getElementById('mfaSendBtn').disabled = true; // Keep button disabled
+                    // Re-render reCAPTCHA immediately
+                    showMfaEnroll(phoneNumber);
                 });
         }
 
         function completeEnrollment() {
             const verificationCode = document.getElementById('enrollVerificationCode').value;
-            const errorEl = document.getElementById('enrollError');
+            const errorEl = document.getElementById('mfaEnrollError'); // UPDATED: Error ID
 
             if (!verificationCode || verificationCode.length !== 6) {
                 errorEl.textContent = 'Please enter a valid 6-digit code.';
@@ -634,7 +690,15 @@
             multiFactor(currentUser).enroll(multiFactorAssertion, 'Primary Phone')
                 .then(() => {
                     errorEl.textContent = '';
-                    document.getElementById('mfaEnrollmentContainer').style.display = 'none';
+                    document.getElementById('mfaEnrollContainer').style.display = 'none'; // UPDATED: Container ID
+                    
+                    // UPDATED: Clear reCAPTCHA on successful enrollment
+                    if (recaptchaVerifierEnroll) {
+                        recaptchaVerifierEnroll.clear();
+                        recaptchaVerifierEnroll = null;
+                        recaptchaEnrollReady = false;
+                    }
+                    
                     alert('Two-factor authentication has been successfully enabled!');
                     showApp();
                 })
@@ -646,7 +710,13 @@
 
         function skipMfaEnrollment() {
             if (confirm('Are you sure you want to skip two-factor authentication? This reduces your account security.')) {
-                document.getElementById('mfaEnrollmentContainer').style.display = 'none';
+                // UPDATED: Clear reCAPTCHA on skip
+                if (recaptchaVerifierEnroll) {
+                    recaptchaVerifierEnroll.clear();
+                    recaptchaVerifierEnroll = null;
+                    recaptchaEnrollReady = false;
+                }
+                document.getElementById('mfaEnrollContainer').style.display = 'none'; // UPDATED: Container ID
                 showApp();
             }
         }
@@ -659,7 +729,7 @@
                 });
             }
         }
-
+// ... (rest of the functions remain the same)
         function showLogin() {
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('appContainer').style.display = 'none';
@@ -773,449 +843,377 @@
                 customInput.style.display = 'none';
             }
         }
-        
+
         function handlePersonChange(value) {
             const customInput = document.getElementById('personCustomInput');
             if (value === 'Custom') {
                 customInput.style.display = 'block';
-                customInput.value = '';
                 customInput.focus();
-            } else if (value) {
-                currentPerson = value;
+            } else {
                 customInput.style.display = 'none';
-                loadReadings(); 
+                currentPerson = value;
             }
         }
-        
+
         function handleCustomNameBlur(value) {
-            const newName = value.trim();
             const select = document.getElementById('personSelect');
-            const customInput = document.getElementById('personCustomInput');
-            
-            if (newName) {
-                currentPerson = newName;
-                personNames.add(newName);
-                updatePersonDropdown(true);
-                customInput.style.display = 'none';
-                loadReadings();
+            if (value.trim()) {
+                currentPerson = value.trim();
+                // Ensure the custom value is selected in the dropdown temporarily
+                select.innerHTML = ''; // Clear options
+                const newOption = document.createElement('option');
+                newOption.value = currentPerson;
+                newOption.textContent = currentPerson;
+                newOption.selected = true;
+                select.appendChild(newOption);
+                // Re-populate and select the correct option after sync updates
+                updatePersonDropdown(true); 
             } else {
-                if (currentPerson) {
-                    select.value = currentPerson;
-                } else {
-                    select.value = "";
-                    customInput.style.display = 'none';
-                }
+                // If custom input is empty, revert to 'Select a person...'
+                select.value = "";
             }
         }
 
         function addReading() {
-            if (!currentUser || !currentPerson) {
-                alert("Please select or enter a person's name first.");
-                return;
-            }
-            
             const date = document.getElementById('recordDate').value;
             const time = document.getElementById('recordTime').value;
-            const systole = parseFloat(document.getElementById('systole').value);
-            const diastole = parseFloat(document.getElementById('diastole').value);
-            const glucose = parseFloat(document.getElementById('glucose').value);
-            const weight = parseFloat(document.getElementById('weight').value);
-            
-            if (!date || !time) {
-                alert("Please enter both date and time.");
-                return;
-            }
-            if (isNaN(systole) && isNaN(diastole) && isNaN(glucose) && isNaN(weight)) {
-                alert("Please enter at least one reading.");
+            const person = currentPerson;
+            const systole = document.getElementById('systole').value;
+            const diastole = document.getElementById('diastole').value;
+            const glucose = document.getElementById('glucose').value;
+            const weight = document.getElementById('weight').value;
+
+            if (!date || !time || !person || (!systole && !diastole && !glucose && !weight)) {
+                alert('Please enter Date, Time, Person Name, and at least one reading value (BP/Glucose/Weight).');
                 return;
             }
 
             const newReading = {
                 date: date,
                 time: time,
-                person: currentPerson,
-                systole: isNaN(systole) ? null : systole,
-                diastole: isNaN(diastole) ? null : diastole,
-                glucose: isNaN(glucose) ? null : glucose,
-                weight: isNaN(weight) ? null : weight,
+                person: person,
+                systole: systole ? parseInt(systole) : null,
+                diastole: diastole ? parseInt(diastole) : null,
+                glucose: glucose ? parseFloat(glucose) : null,
+                weight: weight ? parseFloat(weight) : null,
                 timestamp: Date.now()
             };
 
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
-            
-            push(readingsRef, newReading) 
+            push(readingsRef, newReading)
                 .then(() => {
-                    console.log('Reading saved successfully to Firebase');
+                    alert('Reading added successfully!');
                     document.getElementById('systole').value = '';
                     document.getElementById('diastole').value = '';
                     document.getElementById('glucose').value = '';
                     document.getElementById('weight').value = '';
-                    const now = new Date();
-                    document.getElementById('recordDate').value = now.toISOString().split('T')[0];
-                    document.getElementById('recordTime').value = now.toTimeString().split(' ')[0].substring(0, 5); 
                 })
-                .catch(err => {
-                    console.error('Failed to save reading:', err);
-                    alert('Failed to save reading: ' + err.message);
+                .catch((error) => {
+                    console.error("Error adding reading: ", error);
+                    alert("Failed to add reading: " + error.message);
                 });
         }
-        
+
         function deleteReading(id) {
-            if (!currentUser || !id) return;
             if (confirm('Are you sure you want to delete this reading?')) {
-                const readingRef = ref(db, `users/${currentUser.uid}/healthReadings/${id}`);
-                remove(readingRef).catch(err => console.error('Delete failed:', err));
+                const readingRef = ref(db, 'users/' + currentUser.uid + '/healthReadings/' + id);
+                remove(readingRef)
+                    .then(() => {
+                        console.log('Reading deleted.');
+                    })
+                    .catch((error) => {
+                        console.error('Error deleting reading:', error);
+                        alert('Failed to delete reading: ' + error.message);
+                    });
             }
         }
 
         function loadReadings() {
-            if (!currentUser || allReadings.length === 0) { 
-                const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
-                document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
-                document.getElementById('detailedHistoryContainer').innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2>${emptyMessage}`;
-                document.getElementById('overallAveragesContainer').innerHTML = `<h2>📈 Overall Averages Summary</h2>${emptyMessage}`;
-                return;
-            }
-            
-            calculateAndDisplayTables();
+            const todayReadings = allReadings.filter(r => r.date === todayDateString);
+            renderTodayReadings(todayReadings);
+            renderDetailedHistory(allReadings);
+            renderOverallAverages(allReadings);
         }
 
-        function calculate(data, metric) {
-            const validData = data.filter(r => r[metric] !== null && r[metric] !== undefined);
-            if (validData.length === 0) return { avg: null, count: 0 };
-            
-            const sum = validData.reduce((acc, r) => acc + r[metric], 0);
-            return { avg: sum / validData.length, count: validData.length };
-        }
+        function calculateAverages(readings) {
+            const totals = { systole: 0, diastole: 0, glucose: 0, weight: 0 };
+            const counts = { systole: 0, diastole: 0, glucose: 0, weight: 0 };
 
-        function calculateAndDisplayTables() {
-            const metrics = ['systole', 'diastole', 'glucose', 'weight'];
-            const allPersonAverages = {};
-            const allPersonTodayReadings = {}; 
-            
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const oneWeekAgo = new Date(today); oneWeekAgo.setDate(today.getDate() - 7);
-            const oneMonthAgo = new Date(today); oneMonthAgo.setMonth(today.getMonth() - 1);
-
-            const readingsByPerson = {};
-            allReadings.forEach(r => {
-                if (!r.person) return; 
-                
-                if (!readingsByPerson[r.person]) {
-                    readingsByPerson[r.person] = [];
-                }
-                readingsByPerson[r.person].push(r);
+            readings.forEach(r => {
+                if (r.systole) { totals.systole += r.systole; counts.systole++; }
+                if (r.diastole) { totals.diastole += r.diastole; counts.diastole++; }
+                if (r.glucose) { totals.glucose += r.glucose; counts.glucose++; }
+                if (r.weight) { totals.weight += r.weight; counts.weight++; }
             });
 
-            personNames.forEach(person => {
-                const personReadings = readingsByPerson[person] || [];
-                
-                const filtered = {
-                    day: personReadings.filter(r => r.date === todayDateString),
-                    week: personReadings.filter(r => new Date(r.date) >= oneWeekAgo),
-                    month: personReadings.filter(r => new Date(r.date) >= oneMonthAgo),
-                };
-                
-                const results = {};
-                metrics.forEach(metric => {
-                    results[metric] = {
-                        day: calculate(filtered.day, metric),
-                        week: calculate(filtered.week, metric),
-                        month: calculate(filtered.month, metric),
-                    };
-                });
-                
-                allPersonAverages[person] = results;
+            const formatBP = (sys, dias) => (counts.systole > 0 && counts.diastole > 0) ? `${Math.round(sys / counts.systole)} / ${Math.round(dias / counts.diastole)}` : 'N/A';
+            const formatGlucose = (total, count) => count > 0 ? `${(total / count).toFixed(1)}` : 'N/A';
+            const formatWeight = (total, count) => count > 0 ? `${(total / count).toFixed(1)}` : 'N/A';
 
-                if (filtered.day.length > 0) {
-                     allPersonTodayReadings[person] = filtered.day.sort((a,b) => a.time.localeCompare(b.time));
-                }
-            });
-
-            displayTodayReadings(allPersonTodayReadings); 
-            displayAllAverages(allPersonAverages);
-            displayDetailedHistory();
+            return {
+                bp: formatBP(totals.systole, totals.diastole),
+                glucose: formatGlucose(totals.glucose, counts.glucose),
+                weight: formatWeight(totals.weight, counts.weight),
+                bpCount: counts.systole,
+                glucoseCount: counts.glucose,
+                weightCount: counts.weight
+            };
         }
-        
-        const formatBP = (sys, dia, count = 0) => {
-            if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
-            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${count} R)</span>`;
-        };
-        
-        const formatMetric = (data) => {
-            if (data.avg === null) return `<span class="no-data">N/A</span>`;
-            return `<span class="avg-reading">${data.avg.toFixed(1)}</span> <span style="font-size:0.8em; color:#555;">(${data.count} R)</span>`;
-        };
-        
-        function displayTodayReadings(allPersonTodayReadings) {
+
+        function renderTodayReadings(readings) {
             const container = document.getElementById('todayAveragesContainer');
-            const personsWithData = Object.keys(allPersonTodayReadings);
-            
-            let contentHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>`;
+            container.innerHTML = '<h2>☀️ Today\'s Individual Readings</h2>';
 
-            if (personsWithData.length === 0) {
-                container.innerHTML = contentHTML + `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
-                return;
-            }
-            
-            const allTimes = new Set();
-            personsWithData.forEach(person => {
-                allPersonTodayReadings[person].forEach(r => {
-                    allTimes.add(r.time);
-                });
-            });
-            
-            const sortedTimes = Array.from(allTimes).sort();
-
-            let tableHTML = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            ${personsWithData.sort().map(person => `
-                                <th>${person}</th>
-                            `).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            sortedTimes.forEach(time => {
-                tableHTML += `<tr><th>${time}</th>`;
-                
-                personsWithData.sort().forEach(person => {
-                    const reading = allPersonTodayReadings[person].find(r => r.time === time);
-                    
-                    if (reading) {
-                        const bp = reading.systole && reading.diastole ? `${reading.systole}/${reading.diastole}` : '';
-                        const glucose = reading.glucose ? reading.glucose.toFixed(1) : '';
-                        const weight = reading.weight ? reading.weight.toFixed(1) : '';
-                        
-                        tableHTML += `
-                            <td style="text-align: left;">
-                                <div class="detail-reading" style="font-weight: bold;">
-                                    BP: ${bp || '<span class="no-data">N/A</span>'} | 
-                                    Gl: ${glucose || '<span class="no-data">N/A</span>'} | 
-                                    W: ${weight || '<span class="no-data">N/A</span>'} 
-                                    <button class="delete-btn" onclick="deleteReading('${reading.id}')">X</button>
-                                </div>
-                            </td>
-                        `;
-                    } else {
-                        tableHTML += `<td><span class="no-data">-</span></td>`;
-                    }
-                });
-                
-                tableHTML += `</tr>`;
-            });
-
-            tableHTML += `</tbody></table>`;
-            container.innerHTML = contentHTML + tableHTML;
-        }
-
-        function displayAllAverages(allPersonAverages) {
-            const container = document.getElementById('overallAveragesContainer');
-            const personsWithData = Object.keys(allPersonAverages).filter(p => {
-                const results = allPersonAverages[p];
-                return results.systole.day.count > 0 || results.systole.week.count > 0 || results.systole.month.count > 0;
-            });
-            
-            if (personsWithData.length === 0) {
-                container.innerHTML = `<h2>📈 Overall Averages Summary</h2><p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
+            if (readings.length === 0) {
+                container.innerHTML += '<p class="no-data">No readings recorded today.</p>';
                 return;
             }
 
-            let tableHTML = `
-                <h2>📈 Overall Averages Summary</h2>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th rowspan="2">Person</th>
-                            <th colspan="3">Blood Pressure (Sys/Dia mmHg)</th>
-                            <th colspan="3">Glucose (mg/dL)</th>
-                            <th colspan="3">Weight (kg/lbs)</th>
-                        </tr>
-                        <tr>
-                            <th>Daily</th>
-                            <th>Weekly</th>
-                            <th>Monthly</th>
-                            <th>Daily</th>
-                            <th>Weekly</th>
-                            <th>Monthly</th>
-                            <th>Daily</th>
-                            <th>Weekly</th>
-                            <th>Monthly</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            // Group by person
+            const readingsByPerson = readings.reduce((acc, r) => {
+                const key = r.person || 'Unknown';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(r);
+                return acc;
+            }, {});
 
-            personsWithData.sort().forEach(person => {
-                const results = allPersonAverages[person];
-                
+            let tableHTML = `<table class="data-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Time</th>
+                        <th rowspan="2">Person</th>
+                        <th colspan="2">Blood Pressure (mmHg)</th>
+                        <th rowspan="2">Glucose (mg/dL)</th>
+                        <th rowspan="2">Weight (kg/lbs)</th>
+                        <th rowspan="2">Action</th>
+                    </tr>
+                    <tr>
+                        <th>Systolic</th>
+                        <th>Diastolic</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            let sortedReadings = readings.sort((a, b) => {
+                const timeA = a.time || '00:00';
+                const timeB = b.time || '00:00';
+                if (timeA < timeB) return -1;
+                if (timeA > timeB) return 1;
+                return 0;
+            });
+
+
+            sortedReadings.forEach(r => {
                 tableHTML += `
                     <tr>
-                        <th>${person}</th>
-                        <td>${formatBP(results.systole.day, results.diastole.day, results.systole.day.count)}</td>
-                        <td>${formatBP(results.systole.week, results.diastole.week, results.systole.week.count)}</td>
-                        <td>${formatBP(results.systole.month, results.diastole.month, results.systole.month.count)}</td>
-                        <td>${formatMetric(results.glucose.day)}</td>
-                        <td>${formatMetric(results.glucose.week)}</td>
-                        <td>${formatMetric(results.glucose.month)}</td>
-                        <td>${formatMetric(results.weight.day)}</td>
-                        <td>${formatMetric(results.weight.week)}</td>
-                        <td>${formatMetric(results.weight.month)}</td>
-                    </tr>
-                `;
+                        <td style="font-weight: bold; white-space: nowrap;">${r.time}</td>
+                        <td style="text-align: left; font-weight: bold;">${r.person || 'Unknown'}</td>
+                        <td>${r.systole || '—'}</td>
+                        <td>${r.diastole || '—'}</td>
+                        <td>${r.glucose ? r.glucose.toFixed(1) : '—'}</td>
+                        <td>${r.weight ? r.weight.toFixed(1) : '—'}</td>
+                        <td><button class="delete-btn" onclick="deleteReading('${r.id}')">Delete</button></td>
+                    </tr>`;
             });
 
             tableHTML += `</tbody></table>`;
-            container.innerHTML = tableHTML;
+            container.innerHTML += tableHTML;
         }
-        
-        function displayDetailedHistory() {
+
+        function renderDetailedHistory(allReadings) {
             const container = document.getElementById('detailedHistoryContainer');
-            if (personNames.size === 0) {
-                container.innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2><p style="text-align:center; color:#777;">No history to display.</p>`;
+            container.innerHTML = '<h2>📅 Detailed 30-Day Reading History</h2><p style="text-align: center; font-style: italic; color: #555;">Showing the most recent reading per person for the last 30 days.</p>';
+            
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const filteredReadings = allReadings.filter(r => new Date(r.date + 'T' + (r.time || '00:00')) >= thirtyDaysAgo);
+
+            if (filteredReadings.length === 0) {
+                container.innerHTML += '<p class="no-data">No readings in the last 30 days.</p>';
                 return;
             }
 
-            const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
-                .sort((a, b) => new Date(b) - new Date(a))
-                .slice(0, 30);
+            // Find the most recent reading for each person *on each day*
+            const dailyReadingsByPerson = new Map(); // Key: 'date|person', Value: most recent reading
 
-            if (uniqueDates.length === 0) {
-                 container.innerHTML = `<h2>📅 Detailed 30-Day Reading History</h2><p style="text-align:center; color:#777;">No readings in the last 30 days.</p>`;
-                 return;
-            }
-
-            const latestReadingPerDay = {};
-
-            allReadings.forEach(r => {
-                if (!r.person) return;
-                const key = `${r.date}_${r.person}`;
-                if (!latestReadingPerDay[key] || r.timestamp > latestReadingPerDay[key].timestamp) {
-                    latestReadingPerDay[key] = r;
+            filteredReadings.forEach(r => {
+                const key = `${r.date}|${r.person}`;
+                const readingDate = new Date(r.date + 'T' + (r.time || '00:00'));
+                
+                if (!dailyReadingsByPerson.has(key) || readingDate > new Date(dailyReadingsByPerson.get(key).date + 'T' + (dailyReadingsByPerson.get(key).time || '00:00'))) {
+                    dailyReadingsByPerson.set(key, r);
                 }
             });
 
-            const sortedPersonNames = Array.from(personNames).sort();
+            // Group the unique daily readings by person for history display
+            const historyByPerson = Array.from(dailyReadingsByPerson.values()).reduce((acc, r) => {
+                const key = r.person || 'Unknown';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(r);
+                return acc;
+            }, {});
 
-            let tableHTML = `
-                <h2>📅 Detailed 30-Day Reading History</h2>
-                <p style="text-align: center; font-style: italic; color: #555;">
-                    Showing the **latest reading per day** for each person across the last 30 days. 
-                    For a full export, please use the download button above.
-                </p>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th rowspan="2">Date</th>
-                            <th colspan="${sortedPersonNames.length * 3}">Readings by Person</th>
-                        </tr>
-                        <tr>
-                            ${sortedPersonNames.map(name => `
-                                <th colspan="3">${name}</th>
-                            `).join('')}
-                        </tr>
-                        <tr>
-                            <th>${formatDate(uniqueDates[0])} - ${formatDate(uniqueDates[uniqueDates.length - 1])}</th>
-                            ${sortedPersonNames.map(() => `
-                                <th>BP</th><th>Glucose</th><th>Weight</th>
-                            `).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            let tableHTML = '<table class="data-table">';
+            tableHTML += '<thead><tr><th rowspan="2">Date</th>';
             
-            uniqueDates.forEach(date => {
-                tableHTML += `<tr><th>${formatDate(date)}</th>`;
+            const sortedPersonNames = Array.from(personNames).sort();
+            
+            if (sortedPersonNames.length === 0) {
+                 tableHTML += `<th>BP (S/D)</th><th>Glucose</th><th>Weight</th>`;
+            } else {
+                sortedPersonNames.forEach(name => {
+                    tableHTML += `<th colspan="3">${name}</th>`;
+                });
+            }
+
+            tableHTML += '</tr>';
+            
+            if (sortedPersonNames.length > 0) {
+                 tableHTML += `<tr>`;
+                 sortedPersonNames.forEach(() => {
+                    tableHTML += `<th>BP (S/D)</th><th>Gluc</th><th>Wt</th>`;
+                 });
+                 tableHTML += `</tr>`;
+            }
+
+            tableHTML += '</thead><tbody>';
+
+            const dateMap = {}; // Map of 'YYYY-MM-DD' -> array of daily readings for that date
+            Array.from(dailyReadingsByPerson.values()).forEach(r => {
+                if (!dateMap[r.date]) dateMap[r.date] = [];
+                dateMap[r.date].push(r);
+            });
+
+            const sortedDates = Object.keys(dateMap).sort().reverse();
+            
+            sortedDates.forEach(date => {
+                tableHTML += `<tr><th style="white-space: nowrap;">${formatDate(date)}</th>`;
                 
-                sortedPersonNames.forEach(person => {
-                    const key = `${date}_${person}`;
-                    const r = latestReadingPerDay[key];
+                sortedPersonNames.forEach(personName => {
+                    const dailyReadings = dateMap[date].filter(r => r.person === personName);
                     
-                    if (r) {
-                        const bp = r.systole && r.diastole ? `${r.systole}/${r.diastole}` : `<span class="no-data">N/A</span>`;
-                        const glucose = r.glucose ? r.glucose.toFixed(1) : `<span class="no-data">N/A</span>`;
-                        const weight = r.weight ? r.weight.toFixed(1) : `<span class="no-data">N/A</span>`;
-                        tableHTML += `
-                            <td class="detail-reading">${bp}</td>
-                            <td class="detail-reading">${glucose}</td>
-                            <td class="detail-reading">${weight}</td>
-                        `;
+                    if (dailyReadings.length > 0) {
+                        const r = dailyReadings[0];
+                        const bp = (r.systole || r.diastole) ? `<span class="avg-bp">${r.systole || '—'}/${r.diastole || '—'}</span>` : '—';
+                        const glucose = r.glucose ? r.glucose.toFixed(1) : '—';
+                        const weight = r.weight ? r.weight.toFixed(1) : '—';
+                        
+                        tableHTML += `<td>${bp}</td><td>${glucose}</td><td>${weight}</td>`;
                     } else {
-                        tableHTML += `
-                            <td colspan="3"><span class="no-data">-</span></td>
-                        `;
+                        tableHTML += `<td>—</td><td>—</td><td>—</td>`;
                     }
                 });
-                
+
                 tableHTML += `</tr>`;
             });
 
+
+            tableHTML += '</tbody></table>';
+            container.innerHTML += tableHTML;
+        }
+
+        function renderOverallAverages(allReadings) {
+            const container = document.getElementById('overallAveragesContainer');
+            container.innerHTML = '<h2>📈 Overall Averages Summary</h2>';
+            
+            if (allReadings.length === 0) {
+                container.innerHTML += '<p class="no-data">No data to calculate averages.</p>';
+                return;
+            }
+
+            const averagesByPerson = {};
+            Array.from(personNames).forEach(person => {
+                const readings = allReadings.filter(r => r.person === person);
+                averagesByPerson[person] = calculateAverages(readings);
+            });
+
+            let tableHTML = `<table class="data-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Person</th>
+                        <th colspan="2">Blood Pressure (mmHg)</th>
+                        <th rowspan="2">Glucose (mg/dL)</th>
+                        <th rowspan="2">Weight (kg/lbs)</th>
+                    </tr>
+                    <tr>
+                        <th>Avg BP (S/D)</th>
+                        <th># of BP Readings</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            const sortedPersonNames = Object.keys(averagesByPerson).sort();
+
+            sortedPersonNames.forEach(person => {
+                const avg = averagesByPerson[person];
+                tableHTML += `
+                    <tr>
+                        <th style="text-align:left;">${person}</th>
+                        <td class="avg-bp">${avg.bp}</td>
+                        <td>${avg.bpCount || '—'}</td>
+                        <td class="avg-reading">${avg.glucose}</td>
+                        <td class="avg-reading">${avg.weight}</td>
+                    </tr>`;
+            });
+
             tableHTML += `</tbody></table>`;
-            container.innerHTML = tableHTML;
+            container.innerHTML += tableHTML;
         }
 
         function exportFullHistory() {
             if (allReadings.length === 0) {
-                alert("No history data available to export.");
+                alert("No data to export.");
                 return;
             }
 
-            let csvContent = "Date,Time,Person,Systolic (mmHg),Diastolic (mmHg),Glucose (mg/dL),Weight (kg/lbs)\n";
+            const headers = ["ID", "Date", "Time", "Person", "Systolic (mmHg)", "Diastolic (mmHg)", "Glucose (mg/dL)", "Weight (kg/lbs)", "Timestamp (ms)"];
+            let csvContent = headers.join(",") + "\n";
 
-            const sortedForExport = [...allReadings].sort((a, b) => {
-                const dateA = new Date(a.date + ' ' + (a.time || '00:00'));
-                const dateB = new Date(b.date + ' ' + (b.time || '00:00'));
-                return dateA - dateB;
-            });
-            
-            sortedForExport.forEach(r => {
-                const date = r.date || '';
-                const time = r.time || '';
-                const person = r.person || '';
-                const systole = r.systole !== null && r.systole !== undefined ? r.systole : '';
-                const diastole = r.diastole !== null && r.diastole !== undefined ? r.diastole : '';
-                const glucose = r.glucose !== null && r.glucose !== undefined ? r.glucose : '';
-                const weight = r.weight !== null && r.weight !== undefined ? r.weight : '';
-
-                csvContent += `${date},${time},"${person}",${systole},${diastole},${glucose},${weight}\n`;
+            allReadings.forEach(reading => {
+                const row = [
+                    reading.id,
+                    reading.date,
+                    reading.time || "",
+                    reading.person || "Unknown",
+                    reading.systole || "",
+                    reading.diastole || "",
+                    reading.glucose || "",
+                    reading.weight || "",
+                    reading.timestamp
+                ];
+                csvContent += row.map(e => {
+                    const value = String(e || "").replace(/"/g, '""');
+                    return isNaN(e) ? `"${value}"` : value;
+                }).join(",") + "\n";
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            
-            const timestamp = new Date().toISOString().slice(0, 10);
-            link.setAttribute('download', `Health_Readings_Export_${timestamp}.csv`);
-            
+            link.setAttribute('download', `health_tracker_data_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
-            alert('Successfully generated CSV file for download.');
+            URL.revokeObjectURL(url);
         }
 
         window.login = login;
+        window.toggleSignupMode = toggleSignupMode;
         window.signup = signup;
         window.logout = logout;
-        window.toggleSignupMode = toggleSignupMode; 
-        window.handlePersonChange = handlePersonChange;
-        window.handleCustomNameBlur = handleCustomNameBlur; 
         window.addReading = addReading;
         window.deleteReading = deleteReading;
-        window.loadReadings = loadReadings; 
+        window.handlePersonChange = handlePersonChange;
+        window.handleCustomNameBlur = handleCustomNameBlur;
         window.exportFullHistory = exportFullHistory;
         window.verifyMfaCode = verifyMfaCode;
         window.cancelMfaVerification = cancelMfaVerification;
-        window.sendEnrollmentCode = sendEnrollmentCode;
+        window.sendEnrollCode = sendEnrollCode; // Renamed
         window.completeEnrollment = completeEnrollment;
         window.skipMfaEnrollment = skipMfaEnrollment;
-
+        
     </script>
 </body>
 </html>
