@@ -546,12 +546,26 @@
 
             if (!recaptchaVerifierEnroll) {
                 setTimeout(() => {
-                    recaptchaVerifierEnroll = new RecaptchaVerifier(auth, 'recaptcha-container-enroll', {
-                        size: 'normal',
-                        callback: () => {
-                            console.log('reCAPTCHA solved for enrollment');
-                        }
-                    });
+                    try {
+                        recaptchaVerifierEnroll = new RecaptchaVerifier(auth, 'recaptcha-container-enroll', {
+                            size: 'normal',
+                            callback: () => {
+                                console.log('reCAPTCHA solved for enrollment');
+                            },
+                            'expired-callback': () => {
+                                console.log('reCAPTCHA expired');
+                                recaptchaVerifierEnroll = null;
+                            }
+                        });
+                        recaptchaVerifierEnroll.render().then(() => {
+                            console.log('reCAPTCHA rendered successfully');
+                        }).catch((error) => {
+                            console.error('reCAPTCHA render error:', error);
+                        });
+                    } catch (error) {
+                        console.error('Error initializing reCAPTCHA:', error);
+                        document.getElementById('enrollError').textContent = 'reCAPTCHA initialization failed. Please refresh the page.';
+                    }
                 }, 100);
             }
         }
@@ -567,6 +581,11 @@
 
             if (!currentUser) {
                 errorEl.textContent = 'User session expired. Please login again.';
+                return;
+            }
+
+            if (!recaptchaVerifierEnroll) {
+                errorEl.textContent = 'reCAPTCHA not ready. Please wait a moment and try again.';
                 return;
             }
 
@@ -592,6 +611,11 @@
                 .catch((error) => {
                     console.error('Error sending enrollment code:', error);
                     errorEl.textContent = 'Failed to send code: ' + error.message;
+                    
+                    if (recaptchaVerifierEnroll) {
+                        recaptchaVerifierEnroll.clear();
+                        recaptchaVerifierEnroll = null;
+                    }
                 });
         }
 
