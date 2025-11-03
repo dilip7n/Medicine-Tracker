@@ -133,8 +133,7 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            /* CRITICAL: Allows horizontal scrolling on desktop */
-            overflow-x: auto; 
+            overflow-x: auto;
         }
 
         .data-table {
@@ -167,7 +166,6 @@
             text-align: left;
             background-color: #f0f8ff; 
             font-weight: bold;
-            white-space: nowrap;
         }
 
         .data-table tr:nth-child(even) {
@@ -184,19 +182,23 @@
             font-style: italic;
         }
         
-        /* Increased font size for Today's individual readings */
+        /* CRITICAL FIX: Increased font size for Today's individual readings */
         #todayAveragesContainer .detail-reading {
             font-size: 1.0em; 
         }
         
-        /* --- NEW: VISUAL PERSON BIFURCATION (Desktop) --- */
-        /* Apply vertical border to person group headers in the second row (the one with person names) */
-        #detailedHistoryContainer .data-table thead tr:nth-child(2) th:not(:first-child) {
-            border-left: 3px solid #1a4f78; /* Darker border separates person groups */
-        }
-        /* Apply vertical border to the first column (BP) of the second person onwards */
-        #detailedHistoryContainer .data-table .person-group-start {
-            border-left: 3px solid #007bff !important; /* Blue border for visual group separation in body */
+        /* NEW: Count Badge Style for Averages Table */
+        .count-badge {
+            background-color: #ff5722; /* Deep Orange for prominence */
+            color: white;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.7em; 
+            font-weight: bold;
+            display: inline-block; 
+            margin-left: 5px;
+            min-width: 25px; 
+            text-align: center;
         }
 
         /* Auth Styles */
@@ -237,135 +239,26 @@
         .action-btn:hover {
             opacity: 0.8;
         }
-        
-        /* --- NEW: MOBILE CARD VIEW & SCROLL ENHANCEMENTS (max-width: 768px) --- */
-        @media screen and (max-width: 768px) {
-            body {
-                padding: 10px; 
-            }
-            
-            /* INPUT FORM CARD VIEW */
-            .controls .input-grid {
-                grid-template-columns: 1fr; 
-                gap: 15px; 
+
+        /* NEW: Mobile-Specific Bifurcation for Detailed History Table */
+        @media (max-width: 600px) {
+            #detailedHistoryContainer {
+                padding: 10px; /* Adjust padding for mobile */
             }
 
-            .controls .input-group {
-                background: #ffffff; 
-                padding: 15px;
-                border-radius: 8px;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); 
-                border-left: 5px solid #1a4f78; 
-            }
-            
-            .controls #addButton, 
-            .controls #updateButton,
-            .controls .export-btn {
-                 width: 100%;
-                 margin-top: 10px;
-                 display: block; 
-                 margin-left: 0;
-            }
-            
-            .controls .export-btn {
-                float: none; 
-            }
-            
-            /* --- TABLES CARD VIEW TRANSFORMATION --- */
-            #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer {
-                /* Disable horizontal scroll for card view */
-                overflow-x: unset; 
-                padding: 10px; /* Reduced container padding */
+            /* Apply a strong visual split for new person data starting from the second person's BP column */
+            /* Targets the BP column (td:nth-child(3n + 1)) of the 2nd, 3rd, 4th person, etc. (:not(:first-child)) */
+            .data-table tbody tr td:nth-child(3n + 1):not(:first-child) { 
+                border-left: 5px solid #1a4f78 !important; /* Thick, contrasting blue line */
+                background-color: #f0f8ff !important; /* Light blue background for grouping */
             }
 
-            .data-table {
-                /* Hide default table styles */
-                border: none;
-                min-width: unset; 
-                width: 100%; /* Must take full width */
-            }
-
-            /* Hide Table Header on mobile */
-            .data-table thead {
-                display: none;
-            }
-
-            /* Convert Row to Card */
-            .data-table tr {
-                display: block;
-                margin-bottom: 15px;
-                padding: 15px;
-                border: 1px solid #ccc;
-                border-radius: 8px;
-                background: white;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                /* Ensure no background interference from row striping */
-                background-color: white !important; 
-            }
-            
-            /* Style the Person/Date Header (first column: <th>) */
-            .data-table tr th {
-                display: block; /* Full width */
-                text-align: center;
-                font-size: 1.1em;
-                padding: 5px 0 10px 0;
-                margin-bottom: 10px;
-                border: none;
-                border-bottom: 2px solid #1a4f78;
-                background: transparent !important;
-                color: #1a4f78;
-                font-weight: bold;
-            }
-
-            /* Convert Data Cell (<td>) to Labeled Block */
-            .data-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                text-align: right;
-                padding: 8px 0; /* Vertical padding only */
-                border: none;
-                border-bottom: 1px dashed #eee;
-                font-size: 0.9em;
-            }
-            .data-table td:last-child {
-                border-bottom: none;
-                padding-bottom: 0;
-            }
-
-            /* Inject the Label from data-label attribute */
-            .data-table td::before {
-                content: attr(data-label); 
-                font-weight: bold;
-                text-align: left;
-                color: #555;
-                white-space: nowrap;
-                padding-right: 10px;
-            }
-            
-            /* Today's Individual Readings specific adjustments for buttons */
-            #todayAveragesContainer .detail-reading {
-                font-size: 0.9em; 
-                text-align: right;
-            }
-            .action-btn {
-                padding: 2px 4px;
-                font-size: 0.7em;
-                margin-left: 2px;
-            }
-            
-            /* Tighter display for the Averages summary */
-            .data-table .avg-bp + span, .data-table .avg-reading + span {
-                display: none; /* Hide the (X R) count in mobile card view to save space */
-            }
-            
-            /* Mobile: Disable desktop bifurcation border */
-            #detailedHistoryContainer .data-table .person-group-start {
-                 border-left: none !important;
+            /* Ensure the BP column of the *first* person remains visually connected to the date */
+            .data-table tbody tr td:first-child {
+                border-left: 1px solid #eee !important;
+                background-color: transparent !important;
             }
         }
-        /* --- END OF MOBILE CSS --- */
-
     </style>
 </head>
 <body>
@@ -481,8 +374,8 @@
         window.handlePersonChange = handlePersonChange;
         window.handleCustomNameBlur = handleCustomNameBlur; 
         window.addReading = addReading;
-        window.updateReading = updateReading; 
-        window.editReading = editReading;     
+        window.updateReading = updateReading; // New global function
+        window.editReading = editReading;     // New global function
         window.deleteReading = deleteReading;
         window.loadReadings = loadReadings; 
         window.exportFullHistory = exportFullHistory; 
@@ -983,12 +876,14 @@
         const formatBP = (sys, dia) => {
             const bpCount = Math.min(sys.count, dia.count); // BP count should be the minimum of S and D
             if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
-            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span style="font-size:0.8em; color:#555;">(${bpCount} R)</span>`;
+            // UPDATED: Use count-badge class for prominence
+            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span class="count-badge">${bpCount} R</span>`;
         };
         
         const formatMetric = (data) => {
             if (data.avg === null) return `<span class="no-data">N/A</span>`;
-            return `<span class="avg-reading">${data.avg.toFixed(1)}</span> <span style="font-size:0.8em; color:#555;">(${data.count} R)</span>`;
+            // UPDATED: Use count-badge class for prominence
+            return `<span class="avg-reading">${data.avg.toFixed(1)}</span> <span class="count-badge">${data.count} R</span>`;
         };
         
         // --- DISPLAY 1: Today's Individual Readings Table ---
@@ -1052,9 +947,8 @@
                         const glucose = glu !== null ? glu.toFixed(1) : '';
                         const weight = wei !== null ? wei.toFixed(1) : '';
                         
-                        // *** CHANGE: Added data-label attribute for mobile card view ***
                         tableHTML += `
-                            <td style="text-align: left;" data-label="${person}">
+                            <td style="text-align: left;">
                                 <div class="detail-reading" style="font-weight: bold;">
                                     BP: ${bp || '<span class="no-data">N/A</span>'} | 
                                     Gl: ${glucose || '<span class="no-data">N/A</span>'} | 
@@ -1065,8 +959,7 @@
                             </td>
                         `;
                     } else {
-                        // *** CHANGE: Added data-label attribute for mobile card view ***
-                        tableHTML += `<td data-label="${person}"><span class="no-data">-</span></td>`;
+                        tableHTML += `<td><span class="no-data">-</span></td>`;
                     }
                 });
                 
@@ -1118,19 +1011,18 @@
             personsWithData.sort().forEach(person => {
                 const results = allPersonAverages[person];
                 
-                // *** CHANGE: Added data-label attributes to all <td> elements for mobile card view ***
                 tableHTML += `
                     <tr>
                         <th>${person}</th>
-                        <td data-label="Daily Blood Pressure">${formatBP(results.systole.day, results.diastole.day)}</td>
-                        <td data-label="Weekly Blood Pressure">${formatBP(results.systole.week, results.diastole.week)}</td>
-                        <td data-label="Monthly Blood Pressure">${formatBP(results.systole.month, results.diastole.month)}</td>
-                        <td data-label="Daily Glucose">${formatMetric(results.glucose.day)}</td>
-                        <td data-label="Weekly Glucose">${formatMetric(results.glucose.week)}</td>
-                        <td data-label="Monthly Glucose">${formatMetric(results.glucose.month)}</td>
-                        <td data-label="Daily Weight">${formatMetric(results.weight.day)}</td>
-                        <td data-label="Weekly Weight">${formatMetric(results.weight.week)}</td>
-                        <td data-label="Monthly Weight">${formatMetric(results.weight.month)}</td>
+                        <td>${formatBP(results.systole.day, results.diastole.day)}</td>
+                        <td>${formatBP(results.systole.week, results.diastole.week)}</td>
+                        <td>${formatBP(results.systole.month, results.diastole.month)}</td>
+                        <td>${formatMetric(results.glucose.day)}</td>
+                        <td>${formatMetric(results.glucose.week)}</td>
+                        <td>${formatMetric(results.glucose.month)}</td>
+                        <td>${formatMetric(results.weight.day)}</td>
+                        <td>${formatMetric(results.weight.week)}</td>
+                        <td>${formatMetric(results.weight.month)}</td>
                     </tr>
                 `;
             });
@@ -1179,19 +1071,26 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th rowspan="2">Date</th>
-                            <th colspan="${sortedPersonNames.length * 3}">Readings by Person</th>
+                            <th rowspan="3">Date</th>
+                            <th colspan="${sortedPersonNames.length * 3}" style="background-color: #11628e;">Readings by Person</th>
                         </tr>
                         <tr>
-                            ${sortedPersonNames.map(name => `
-                                <th colspan="3">${name}</th>
-                            `).join('')}
+                            ${sortedPersonNames.map((name, index) => {
+                                // Keep desktop border: Add left border for visual separation of people (except the first one)
+                                const style = index > 0 ? 'style="border-left: 2px solid #333; background-color: #007bff;"' : 'style="background-color: #007bff;"';
+                                return `<th colspan="3" ${style}>${name}</th>`;
+                            }).join('')}
                         </tr>
                         <tr>
                             <th style="font-size: 0.8em; color: #555;">(Latest to Oldest)</th>
-                            ${sortedPersonNames.map(() => `
-                                <th>BP</th><th>Glucose</th><th>Weight</th>
-                            `).join('')}
+                            ${sortedPersonNames.map((name, index) => {
+                                // Use CSS for all data cell bifurcation now, no inline style
+                                return `
+                                    <th>BP</th>
+                                    <th>Glucose</th>
+                                    <th>Weight</th>
+                                `;
+                            }).join('')}
                         </tr>
                     </thead>
                     <tbody>
@@ -1200,12 +1099,9 @@
             uniqueDates.forEach(date => {
                 tableHTML += `<tr><th>${formatDate(date)}</th>`;
                 
-                sortedPersonNames.forEach((person, personIndex) => { // Added personIndex
+                sortedPersonNames.forEach((person) => {
                     const key = `${date}_${person}`;
                     const r = detailedHistoryDataCache[key]; // Use the cached map
-                    
-                    // NEW: Determine if this is the start of a new person's group (from the second person onwards)
-                    const startClass = personIndex > 0 ? ' person-group-start' : ''; 
                     
                     if (r) {
                         // FIX: Explicitly check for null/undefined after Number() conversion.
@@ -1218,20 +1114,16 @@
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         
-                        // *** CHANGE: Added data-label attributes and the startClass to the BP column for bifurcation ***
+                        // NOTE: Relying on CSS (td:nth-child(3n+1)) for mobile and desktop bifurcation now
                         tableHTML += `
-                            <td class="detail-reading${startClass}" data-label="${person} BP">${bp}</td>
-                            <td class="detail-reading" data-label="${person} Glucose">${glucose}</td>
-                            <td class="detail-reading" data-label="${person} Weight">${weight}</td>
+                            <td class="detail-reading">${bp}</td>
+                            <td class="detail-reading">${glucose}</td>
+                            <td class="detail-reading">${weight}</td>
                         `;
                     } else {
-                        // **CRITICAL FIX & NEW FEATURE:** Replaced colspan="3" with 3 empty cells 
-                        // and added data-label for mobile card view compatibility, 
-                        // and added the startClass to the first empty cell for bifurcation.
+                        // colspan=3 is used for an empty block
                         tableHTML += `
-                            <td class="detail-reading${startClass}" data-label="${person} BP"><span class="no-data">-</span></td>
-                            <td class="detail-reading" data-label="${person} Glucose"><span class="no-data">-</span></td>
-                            <td class="detail-reading" data-label="${person} Weight"><span class="no-data">-</span></td>
+                            <td colspan="3"><span class="no-data">-</span></td>
                         `;
                     }
                 });
