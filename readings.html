@@ -188,6 +188,16 @@
         #todayAveragesContainer .detail-reading {
             font-size: 1.0em; 
         }
+        
+        /* --- NEW: VISUAL PERSON BIFURCATION (Desktop) --- */
+        /* Apply vertical border to person group headers in the second row (the one with person names) */
+        #detailedHistoryContainer .data-table thead tr:nth-child(2) th:not(:first-child) {
+            border-left: 3px solid #1a4f78; /* Darker border separates person groups */
+        }
+        /* Apply vertical border to the first column (BP) of the second person onwards */
+        #detailedHistoryContainer .data-table .person-group-start {
+            border-left: 3px solid #007bff !important; /* Blue border for visual group separation in body */
+        }
 
         /* Auth Styles */
         #authContainer {
@@ -347,6 +357,11 @@
             /* Tighter display for the Averages summary */
             .data-table .avg-bp + span, .data-table .avg-reading + span {
                 display: none; /* Hide the (X R) count in mobile card view to save space */
+            }
+            
+            /* Mobile: Disable desktop bifurcation border */
+            #detailedHistoryContainer .data-table .person-group-start {
+                 border-left: none !important;
             }
         }
         /* --- END OF MOBILE CSS --- */
@@ -1103,7 +1118,7 @@
             personsWithData.sort().forEach(person => {
                 const results = allPersonAverages[person];
                 
-                // *** CHANGE: Added data-label attributes to all <td> elements ***
+                // *** CHANGE: Added data-label attributes to all <td> elements for mobile card view ***
                 tableHTML += `
                     <tr>
                         <th>${person}</th>
@@ -1185,9 +1200,12 @@
             uniqueDates.forEach(date => {
                 tableHTML += `<tr><th>${formatDate(date)}</th>`;
                 
-                sortedPersonNames.forEach(person => {
+                sortedPersonNames.forEach((person, personIndex) => { // Added personIndex
                     const key = `${date}_${person}`;
                     const r = detailedHistoryDataCache[key]; // Use the cached map
+                    
+                    // NEW: Determine if this is the start of a new person's group (from the second person onwards)
+                    const startClass = personIndex > 0 ? ' person-group-start' : ''; 
                     
                     if (r) {
                         // FIX: Explicitly check for null/undefined after Number() conversion.
@@ -1200,18 +1218,20 @@
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         
-                        // *** CHANGE: Added data-label attributes. Desktop view shows 3 cells per person. ***
+                        // *** CHANGE: Added data-label attributes and the startClass to the BP column for bifurcation ***
                         tableHTML += `
-                            <td class="detail-reading" data-label="${person} BP">${bp}</td>
+                            <td class="detail-reading${startClass}" data-label="${person} BP">${bp}</td>
                             <td class="detail-reading" data-label="${person} Glucose">${glucose}</td>
                             <td class="detail-reading" data-label="${person} Weight">${weight}</td>
                         `;
                     } else {
-                        // *** CHANGE: Replaced single colspan="3" cell with 3 empty cells (with data-label) to enable mobile card view. ***
+                        // **CRITICAL FIX & NEW FEATURE:** Replaced colspan="3" with 3 empty cells 
+                        // and added data-label for mobile card view compatibility, 
+                        // and added the startClass to the first empty cell for bifurcation.
                         tableHTML += `
-                            <td data-label="${person} BP"><span class="no-data">-</span></td>
-                            <td data-label="${person} Glucose"><span class="no-data">-</span></td>
-                            <td data-label="${person} Weight"><span class="no-data">-</span></td>
+                            <td class="detail-reading${startClass}" data-label="${person} BP"><span class="no-data">-</span></td>
+                            <td class="detail-reading" data-label="${person} Glucose"><span class="no-data">-</span></td>
+                            <td class="detail-reading" data-label="${person} Weight"><span class="no-data">-</span></td>
                         `;
                     }
                 });
