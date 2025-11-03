@@ -23,22 +23,33 @@
             color: #1a4f78;
             border-bottom: 2px solid #e0e0e0;
             padding-bottom: 10px;
-            margin-top: 0; /* Ensures it is flush with the top of the container */
+            margin-top: 0;
         }
         
-        /* Title Alignment and Font Reduction for Mobile (NEW CSS) */
-        .section-header-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px; /* Space below the header */
+        /* --- NEW TITLE DESIGN & ALIGNMENT --- */
+        
+        /* NEW: Container for the Title Bar and the Download Button */
+        .section-header-group {
+            margin-bottom: 20px;
         }
 
-        .section-header-wrapper h2 {
-            font-size: 1.5em; /* Default desktop size */
-            margin: 0; /* Remove default margin */
+        /* NEW: Visually appealing title bar (Sleek Gradient & Single Line Guarantee) */
+        .section-title-bar {
+            background: linear-gradient(to right, #1a4f78, #007bff); /* Blue Gradient */
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px; /* Rounded corners */
+            font-size: 1.4em; /* Prominent font */
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            white-space: nowrap; /* CRITICAL: Prevent title spillage/wrap */
+            overflow: hidden; /* Hide overflow */
+            text-overflow: ellipsis; /* Use ellipsis for long titles */
+            display: block; 
+            margin-bottom: 5px; /* Space above button */
         }
-
+        
         /* Utility Classes for Conditional Display */
         .display-mobile-only { display: none; }
         .display-desktop-only { display: block; }
@@ -60,29 +71,22 @@
             }
             
             /* Mobile Title Adjustments */
-            .section-header-wrapper {
-                padding: 10px; /* Add padding to wrapper for consistent spacing */
+            .section-header-group {
+                padding: 0 10px; /* Add padding to wrapper for consistent spacing */
             }
             
-            .section-header-wrapper h2 {
-                font-size: 1.25em; /* Smaller title on mobile */
-                max-width: 65%; /* Give space to the button */
-                line-height: 1.3;
-            }
-            
-            .section-header-wrapper .table-export-btn {
-                font-size: 0.7em; /* Smaller button font */
-                padding: 5px 8px; /* Smaller button padding */
-                white-space: nowrap; /* Prevent button text wrap */
+            .section-title-bar {
+                font-size: 1.2em; /* Smaller title on mobile */
+                padding: 10px 12px;
             }
             
             /* Reading alignment adjustments for mobile cards */
             .value-prominent {
-                font-size: 1em; /* Slight reduction for better fit in the 3-column grid */
+                font-size: 1em; 
             }
             
             .data-point {
-                font-size: 1em; /* Make average values slightly larger for prominence */
+                font-size: 1em;
             }
             
             .period-label {
@@ -94,6 +98,9 @@
                 font-size: 1em;
                 padding: 10px 15px;
             }
+            
+            /* Old wrapper removal */
+            .section-header-wrapper { display: none !important; }
         }
 
         /* Controls and Inputs */
@@ -175,13 +182,15 @@
             display: none; /* Hidden by default */
         }
         
-        /* New Table Download Button Style */
+        /* New Table Download Button Style (Now Full Width and Below Title) */
         .table-export-btn {
             background: #2196F3; /* Light Blue for table export */
             color: white;
-            padding: 8px 15px;
-            font-size: 14px;
-            margin-top: 0; /* Align with H2 */
+            padding: 10px 15px;
+            font-size: 0.9em;
+            margin-top: 5px; /* Controlled by .section-title-bar margin-bottom */
+            display: block; /* CRITICAL: Makes it full width */
+            width: 100%; /* CRITICAL: Makes it full width */
         }
         
         .export-btn {
@@ -205,11 +214,17 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             overflow-x: auto;
         }
+        
+        /* General Padding for Desktop Tables (Today & Overall) */
         #overallAveragesContainer > .display-desktop-only,
-        #todayAveragesContainer > .display-desktop-only,
-        #detailedHistoryContainer > .display-desktop-only {
-             padding: 15px; /* Padding for desktop table container */
+        #todayAveragesContainer > .display-desktop-only {
+             padding: 15px;
         }
+        /* Specific Padding for Detailed History (no top padding) */
+        #detailedHistoryContainer > .display-desktop-only {
+             padding: 0 15px 15px 15px;
+        }
+
 
         .data-table {
             width: 100%;
@@ -307,15 +322,15 @@
         .card-container {
             display: flex;
             flex-direction: column;
-            gap: 20px; /* More breathing room */
+            gap: 20px; 
             padding-top: 15px;
         }
 
         .card {
             background: white;
-            border-radius: 12px; /* Smoother corners */
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); /* Better shadow */
-            padding: 20px; /* More internal padding */
+            border-radius: 12px; 
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); 
+            padding: 20px; 
             transition: transform 0.2s;
         }
 
@@ -334,7 +349,7 @@
             margin-top: 15px;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            background-color: #f7f9fc; /* Light background for separation */
+            background-color: #f7f9fc; 
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -351,13 +366,13 @@
         /* KEY IMPROVEMENT: Aligned metrics using CSS Grid */
         .reading-metric-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* Three equal columns for BP, Gl, W */
+            grid-template-columns: 1fr 1fr 1fr; 
             gap: 10px;
-            text-align: center;
         }
         
         /* Ensure the first column (BP) starts left and last (Weight) ends right for max clarity */
-        .reading-metric-grid > div:first-child { text-align: left; }
+        .reading-metric-grid > div { text-align: center; } /* Center all values */
+        .reading-metric-grid > div:first-child { text-align: left; } 
         .reading-metric-grid > div:last-child { text-align: right; }
 
         .metric-label-mobile {
@@ -369,7 +384,7 @@
         }
 
         .value-prominent {
-            font-size: 1em; /* Adjusted for better alignment/fit */
+            font-size: 1em; 
             font-weight: bold;
             color: #333;
             display: block;
@@ -388,7 +403,7 @@
             margin-top: 20px;
             padding: 15px;
             border-radius: 8px;
-            background-color: #f0f7ff; /* Light blue tint for metric group */
+            background-color: #f0f7ff; 
         }
 
         .metric-label {
@@ -397,14 +412,14 @@
             font-size: 1.1em;
             color: #1a4f78;
             margin-bottom: 10px;
-            border-bottom: 1px solid #cfe2ff; /* Soft separator */
+            border-bottom: 1px solid #cfe2ff; 
             padding-bottom: 5px;
         }
 
         /* KEY IMPROVEMENT: Aligned period label and data point */
         .average-row {
             display: grid;
-            grid-template-columns: 80px 1fr; /* Label and Value */
+            grid-template-columns: 80px 1fr; 
             align-items: center;
             padding: 5px 0;
             border-bottom: 1px dotted #ccc;
@@ -449,12 +464,11 @@
             padding: 15px;
             margin-top: 15px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            /* Ensure the content aligns well within the card */
         }
 
         .person-card-detailed:not(:first-of-type) {
-            border-left: 5px solid #007bff; /* Blue bar for person separation */
-            background-color: #f7f9fc; /* Very light tint for person grouping */
+            border-left: 5px solid #007bff; 
+            background-color: #f7f9fc; 
         }
 
         .person-card-detailed .person-header {
@@ -468,7 +482,7 @@
         /* KEY IMPROVEMENT: Aligned metric label and value */
         .person-card-detailed .reading-row {
             display: flex;
-            justify-content: space-between; /* Pushes label left, value right */
+            justify-content: space-between; 
             padding: 4px 0;
             font-size: 0.95em;
             border-bottom: 1px dotted #f0f0f0;
@@ -1058,9 +1072,27 @@
             // Check for initial empty state
             if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
-                document.getElementById('todayAveragesContainer').innerHTML = `<div class="section-header-wrapper"><h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2></div>${emptyMessage}`;
-                document.getElementById('detailedHistoryContainer').innerHTML = `<div class="section-header-wrapper"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p class="display-desktop-only" style="text-align: center; font-style: italic; color: #555; padding-bottom: 15px;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>${emptyMessage}`;
-                document.getElementById('overallAveragesContainer').innerHTML = `<div class="section-header-wrapper"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>${emptyMessage}`;
+                
+                // --- Updated HTML Structure for Empty State ---
+                document.getElementById('todayAveragesContainer').innerHTML = `
+                    <div class="section-header-group">
+                        <div class="section-title-bar">☀️ Today's Individual Readings (${formatDate(todayDateString)})</div>
+                    </div>${emptyMessage}`;
+                
+                document.getElementById('detailedHistoryContainer').innerHTML = `
+                    <div class="section-header-group">
+                        <div class="section-title-bar">📅 Detailed 30-Day Reading History (Latest Reading/Day)</div>
+                        <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
+                    </div>
+                    <p class="display-desktop-only" style="text-align: center; font-style: italic; color: #555; padding-bottom: 15px;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>${emptyMessage}`;
+                
+                document.getElementById('overallAveragesContainer').innerHTML = `
+                    <div class="section-header-group">
+                        <div class="section-title-bar">📈 Overall Averages Summary</div>
+                        <button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button>
+                    </div>${emptyMessage}`;
+                // --- End Updated HTML Structure ---
+                
                 return;
             }
             
@@ -1160,8 +1192,8 @@
                 return false;
             }).sort();
             
-            // USE NEW WRAPPER
-            let contentHTML = `<div class="section-header-wrapper"><h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2></div>`;
+            // USE NEW WRAPPER (No button here, just the title bar)
+            let contentHTML = `<div class="section-header-group"><div class="section-title-bar">☀️ Today's Individual Readings (${formatDate(todayDateString)})</div></div>`;
 
             if (personsWithData.length === 0) {
                 container.innerHTML = contentHTML + `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
@@ -1169,7 +1201,8 @@
             }
             
             // --- DESKTOP TABLE VIEW ---
-            let desktopHTML = `<div class="display-desktop-only" style="padding: 15px;">`; /* Re-applied desktop padding */
+            // Removed inline padding style, relies on CSS #todayAveragesContainer > .display-desktop-only
+            let desktopHTML = `<div class="display-desktop-only">`; 
             const allTimes = new Set();
             personsWithData.forEach(person => {
                 allPersonTodayReadings[person].forEach(r => {
@@ -1275,8 +1308,13 @@
                 return results.systole.day.count > 0 || results.systole.week.count > 0 || results.systole.month.count > 0 || results.glucose.month.count > 0 || results.weight.month.count > 0;
             }).sort();
             
-            // USE NEW WRAPPER
-            const titleHTML = `<div class="section-header-wrapper"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>`;
+            // USE NEW WRAPPER (Title Bar + Button Below)
+            const titleHTML = `
+                <div class="section-header-group">
+                    <div class="section-title-bar">📈 Overall Averages Summary</div>
+                    <button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button>
+                </div>
+            `;
 
             if (personsWithData.length === 0) {
                 container.innerHTML = titleHTML + `<p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
@@ -1284,7 +1322,8 @@
             }
 
             // --- DESKTOP TABLE VIEW ---
-            let desktopHTML = `<div class="display-desktop-only" style="padding: 15px;">
+            // Removed inline padding style, relies on CSS #overallAveragesContainer > .display-desktop-only
+            let desktopHTML = `<div class="display-desktop-only">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -1389,8 +1428,14 @@
             const sortedPersonNames = Array.from(personNames).sort();
             
             const descriptionHTML = `<p class="display-desktop-only" style="text-align: center; font-style: italic; color: #555; padding-bottom: 15px;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>`;
-            // USE NEW WRAPPER
-            const titleHTML = `<div class="section-header-wrapper"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>`;
+            
+            // USE NEW WRAPPER (Title Bar + Button Below)
+            const titleHTML = `
+                <div class="section-header-group">
+                    <div class="section-title-bar">📅 Detailed 30-Day Reading History (Latest Reading/Day)</div>
+                    <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
+                </div>
+            `;
 
             if (personNames.size === 0 || uniqueDates.length === 0) {
                  container.innerHTML = titleHTML + descriptionHTML + `<p style="text-align:center; color:#777;">No history to display.</p>`;
@@ -1398,7 +1443,8 @@
             }
 
             // --- DESKTOP TABLE VIEW ---
-            let desktopHTML = `<div class="display-desktop-only" style="padding: 0 15px 15px 15px;">
+            // Removed inline padding style, relies on CSS #detailedHistoryContainer > .display-desktop-only
+            let desktopHTML = `<div class="display-desktop-only">
                 ${descriptionHTML}
                 <table class="data-table">
                     <thead>
