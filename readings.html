@@ -26,14 +26,14 @@
             margin-top: 0;
         }
         
-        /* --- NEW TITLE DESIGN & ALIGNMENT --- */
+        /* --- TITLE DESIGN & ALIGNMENT --- */
         
-        /* NEW: Container for the Title Bar and the Download Button */
+        /* Container for the Title Bar and the Download Button */
         .section-header-group {
             margin-bottom: 20px;
         }
 
-        /* NEW: Visually appealing title bar (Sleek Gradient & Single Line Guarantee) */
+        /* Visually appealing title bar (Sleek Gradient & Single Line Guarantee) */
         .section-title-bar {
             background: linear-gradient(to right, #1a4f78, #007bff); /* Blue Gradient */
             color: white;
@@ -50,13 +50,16 @@
             margin-bottom: 5px; /* Space above button */
         }
         
-        /* Utility Classes for Conditional Display */
-        .display-mobile-only { display: none; }
-        .display-desktop-only { display: block; }
+        /* 🚨 CRITICAL FIX: Utility Classes for Conditional Display */
+        /* BASE (Desktop View: > 767px) */
+        .display-mobile-only { display: none !important; } /* GUARANTEED HIDDEN ON DESKTOP */
+        .display-desktop-only { display: block !important; } /* GUARANTEED VISIBLE ON DESKTOP */
         
         @media (max-width: 767px) {
-            .display-desktop-only { display: none !important; }
-            .display-mobile-only { display: block !important; }
+            /* Mobile View: <= 767px */
+            .display-desktop-only { display: none !important; } /* GUARANTEED HIDDEN ON MOBILE */
+            .display-mobile-only { display: block !important; } /* GUARANTEED VISIBLE ON MOBILE */
+            
             body { padding: 10px; }
             .controls { padding: 15px; } 
             
@@ -98,9 +101,6 @@
                 font-size: 1em;
                 padding: 10px 15px;
             }
-            
-            /* Old wrapper removal */
-            .section-header-wrapper { display: none !important; }
         }
 
         /* Controls and Inputs */
@@ -182,7 +182,7 @@
             display: none; /* Hidden by default */
         }
         
-        /* New Table Download Button Style (Now Full Width and Below Title) */
+        /* Table Download Button Style (Full Width and Below Title) */
         .table-export-btn {
             background: #2196F3; /* Light Blue for table export */
             color: white;
@@ -1200,8 +1200,7 @@
                 return;
             }
             
-            // --- DESKTOP TABLE VIEW ---
-            // Removed inline padding style, relies on CSS #todayAveragesContainer > .display-desktop-only
+            // --- DESKTOP TABLE VIEW (display-desktop-only) ---
             let desktopHTML = `<div class="display-desktop-only">`; 
             const allTimes = new Set();
             personsWithData.forEach(person => {
@@ -1259,7 +1258,7 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
+            // --- MOBILE CARD VIEW (display-mobile-only) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
             
             personsWithData.forEach(person => {
@@ -1321,8 +1320,7 @@
                 return;
             }
 
-            // --- DESKTOP TABLE VIEW ---
-            // Removed inline padding style, relies on CSS #overallAveragesContainer > .display-desktop-only
+            // --- DESKTOP TABLE VIEW (display-desktop-only) ---
             let desktopHTML = `<div class="display-desktop-only">
                 <table class="data-table">
                     <thead>
@@ -1368,7 +1366,7 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
+            // --- MOBILE CARD VIEW (display-mobile-only) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
             
             personsWithData.forEach(person => {
@@ -1442,8 +1440,7 @@
                  return;
             }
 
-            // --- DESKTOP TABLE VIEW ---
-            // Removed inline padding style, relies on CSS #detailedHistoryContainer > .display-desktop-only
+            // --- DESKTOP TABLE VIEW (display-desktop-only) ---
             let desktopHTML = `<div class="display-desktop-only">
                 ${descriptionHTML}
                 <table class="data-table">
@@ -1505,7 +1502,7 @@
 
             desktopHTML += `</tbody></table></div>`;
             
-            // --- MOBILE CARD VIEW (DESIGN IMPROVED) ---
+            // --- MOBILE CARD VIEW (display-mobile-only) ---
             let mobileHTML = `<div class="card-container display-mobile-only">`;
 
             uniqueDates.forEach(date => {
