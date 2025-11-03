@@ -474,7 +474,7 @@
     </div>
 
     <script type="module">
-        // Make functions global for inline onclick handlers
+        // 🚨 CRITICAL FIX: Make functions global so inline HTML onclick handlers can find them
         window.login = login;
         window.signup = signup;
         window.logout = logout;
@@ -495,9 +495,9 @@
         import { getDatabase, ref, set, onValue, push, update, remove } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-database.js';
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
 
-        // Your web app's Firebase configuration (CONFIRMED)
+        // ⚠️ CRITICAL WARNING: Please replace this with YOUR actual Firebase Configuration.
         const firebaseConfig = {
-            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY",
+            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY", // 🚨 REPLACE THIS PLACEHOLDER KEY! 🚨
             authDomain: "medicine-tracker-b90f2.firebaseapp.com",
             databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
             projectId: "medicine-tracker-b90f2",
@@ -510,6 +510,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
+        console.log("✅ Firebase initialized successfully. Ready for authentication."); 
 
         let currentUser = null;
         let allReadings = [];
@@ -560,7 +561,6 @@
             document.getElementById('authError').textContent = '';
         }
 
-        // --- CRITICAL FIX APPLIED HERE ---
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -574,26 +574,33 @@
             if (!email || !password) { 
                 errorEl.textContent = 'Please enter email and password'; 
                 loginBtn.disabled = false; // Re-enable on validation failure
+                console.error("❌ Login failed: Email or password is empty."); 
                 return; 
             }
+            
+            console.log('🔄 Attempting login for:', email); 
 
             try {
                 signInWithEmailAndPassword(auth, email, password)
                     .then((userCredential) => {
                         currentUser = userCredential.user;
                         errorEl.textContent = '';
+                        console.log('✅ Login successful. User:', currentUser.uid); 
                         // Do NOT re-enable button, showApp() will hide the container
                         showApp();
                     })
                     .catch((error) => {
                         // 2. Clear error on promise rejection and re-enable button
-                        errorEl.textContent = 'Login failed: ' + error.message;
+                        const displayMessage = `Login failed: ${error.code} - ${error.message}`;
+                        errorEl.textContent = displayMessage;
                         loginBtn.disabled = false; 
+                        console.error('❌ Firebase Auth Error:', displayMessage, error); 
                     });
             } catch(e) {
                  // 3. Catch any synchronous JS errors that could block the flow
                 errorEl.textContent = 'Critical Error during login: ' + e.message;
                 loginBtn.disabled = false; 
+                console.error('❌ Synchronous JavaScript Error:', e); 
             }
         }
 
@@ -618,11 +625,15 @@
                 .then((userCredential) => {
                     currentUser = userCredential.user;
                     const userRef = ref(db, 'users/' + currentUser.uid + '/profile');
-                    set(userRef, { name: name, email: email }).then(() => showApp());
+                    set(userRef, { name: name, email: email }).then(() => {
+                        console.log('✅ Signup successful and profile created.'); 
+                        showApp();
+                    });
                 })
                 .catch((error) => {
                     errorEl.textContent = 'Signup failed: ' + error.message;
                     signupToggleBtn.disabled = false;
+                    console.error('❌ Firebase Signup Error:', error); 
                 });
         }
 
@@ -630,6 +641,7 @@
             if (confirm('Logout?')) {
                 signOut(auth).then(() => {
                     currentUser = null;
+                    console.log('👋 User logged out.'); 
                     showLogin();
                 });
             }
@@ -643,6 +655,7 @@
         function showApp() {
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
+            console.log('🚀 App view shown.'); 
             
             const profileRef = ref(db, 'users/' + currentUser.uid + '/profile/name');
             onValue(profileRef, (snapshot) => {
@@ -656,9 +669,11 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
+                console.log('👤 Auth state changed: Logged In.', user.email); 
                 showApp();
             } else {
                 currentUser = null;
+                console.log('🚫 Auth state changed: Logged Out.'); 
                 showLogin();
             }
         });
@@ -670,6 +685,7 @@
 
             // Path check is critical
             const readingsRef = ref(db, 'users/' + currentUser.uid + '/healthReadings');
+            console.log('📡 Setting up real-time database sync.'); 
 
             syncListener = onValue(readingsRef, (snapshot) => {
                 const data = snapshot.val(); 
@@ -707,7 +723,7 @@
                 resetForm(); // Reset form state after sync
 
             }, (error) => {
-                console.error('Real-time sync error: Failed to read from database. Check Firebase Security Rules.', error);
+                console.error('❌ Real-time sync error: Failed to read from database. Check Firebase Security Rules.', error);
                 // Clear UI on critical failure
                 loadReadings(); 
             });
@@ -1458,7 +1474,7 @@
                 const monthlyWeight = getAvg(results.weight.month);
 
                 // Use quotes around the person's name
-                const escapedPerson = `"${person.replace(/"/g, '""")"`;
+                const escapedPerson = `"${person.replace(/"/g, '"""')}"`;
 
                 csvContent += `${escapedPerson},${dailyBP},${dailyGlucose},${dailyWeight},${weeklyBP},${weeklyGlucose},${weeklyWeight},${monthlyBP},${monthlyGlucose},${monthlyWeight}\n`;
             });
