@@ -235,6 +235,7 @@
             cursor: pointer;
             font-size: 0.8em;
             margin-left: 5px;
+            white-space: nowrap; /* Prevent buttons from wrapping */
         }
         .edit-btn {
             background-color: #4CAF50; /* Green for Edit */
@@ -321,15 +322,13 @@
             }
             
             /* Today's Readings Table Specific adjustments (less severe transformation) */
-            /* Since the first column is TIME, we'll hide the person header row and stack time/reading */
             #todayAveragesContainer .data-table {
                  min-width: unset;
             }
-            #todayAveragesContainer .data-table thead tr:nth-child(1) th {
-                display: none; /* Hide the Time header */
-            }
-            #todayAveragesContainer .data-table thead tr:nth-child(2) th {
-                 display: none; /* Hide the Person Name headers */
+            #todayAveragesContainer .data-table thead, 
+            #todayAveragesContainer .data-table thead tr {
+                display: none; /* Hide all table headers for this specific layout */
+                position: static;
             }
             #todayAveragesContainer .data-table tbody tr {
                 border: none;
@@ -360,6 +359,7 @@
                 border: none;
                 border-bottom: none;
                 min-width: 50%;
+                padding-left: 0;
             }
             #todayAveragesContainer .data-table tbody td:before {
                 content: attr(data-person) ":"; /* Use person name as label */
@@ -536,345 +536,20 @@
             onAuthStateChanged, 
             signOut,
             PhoneAuthProvider, // New
-            multiFactor // New
+            multiFactor, // New
+            updateProfile
         } from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js';
         // Need to import the standard namespace for RecaptchaVerifier
         import firebase from 'https://www.gstatic.com/firebasejs/9.21.0/firebase-auth-compat.js'; 
 
 
-        // Your web app's Firebase configuration (CONFIRMED)
+        // =========================================================================
+        // *** CRITICAL: REPLACE WITH YOUR ACTUAL FIREBASE CONFIGURATION ***
+        // =========================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyAjRB8_dLv8icceOyZNNGO9kIXUFVjWfoY",
-            authDomain: "medicine-tracker-b90f2.firebaseapp.com",
-            databaseURL: "https://medicine-tracker-b90f2-default-rtdb.firebaseio.com",
-            projectId: "medicine-tracker-b90f2",
-            storageBucket: "medicine-tracker-b90f2.firebasestorage.app",
-            messagingSenderId: "230127910329",
-            appId: "1:230127910329:web:756789fcd3a1ac02948a68"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const auth = getAuth(app);
-
-        let currentUser = null;
-        let allReadings = [];
-        let allPersonAveragesCache = {}; // Cache for overall averages
-        let detailedHistoryDataCache = {}; // Cache for detailed history data
-        let personNames = new Set();
-        let currentPerson = '';
-        const today = new Date();
-        document.getElementById('recordDate').value = today.toISOString().split('T')[0];
-        document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); 
-        const todayDateString = today.toISOString().split('T')[0];
-
-        // --- NEW MFA VARIABLES ---
-        let recaptchaVerifier = null;
-        let mfaResolver = null; // Stores the object needed to complete the 2FA login
-        let verificationId = null; // Stores the ID needed to verify the SMS code
-        let enrollmentSession = null; // NEW: Stores the session for new enrollment
-
-        // --- NEW: Setup Invisible reCAPTCHA ---
-        function setupRecaptcha() {
-            if (recaptchaVerifier) return;
-            
-            // ReCAPTCHA requires the standard Firebase namespace, which we imported as 'firebase'
-            recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible', 
-                'callback': (response) => {
-                    // reCAPTCHA solved automatically in invisible mode
-                },
-                'expired-callback': () => {
-                    document.getElementById('authError').textContent = 'reCAPTCHA expired. Please refresh.';
-                }
-            }, auth);
-
-            // Render the reCAPTCHA widget
-            recaptchaVerifier.render();
-        }
-
-
-        // --- UTILITY: Date Formatting (DD-MMM-YY) ---
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            // Use date only part to prevent timezone shift issues on Date object creation
-            const date = new Date(dateString + 'T00:00:00'); 
-            
-            const day = date.getDate().toString().padStart(2, '0');
-            const year = date.getFullYear().toString().slice(-2);
-            
-            const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-            const month = monthNames[date.getMonth()];
-
-            return `${day}-${month}-${year}`;
-        }
-        
-        // --- AUTH & SYNC ---
-        function toggleSignupMode() {
-            const container = document.getElementById('authContainer');
-            const toggleBtn = document.getElementById('signupToggleBtn');
-            const loginBtn = document.getElementById('loginBtn');
-            const isSignupMode = container.classList.contains('signup-mode');
-
-            if (isSignupMode) {
-                container.classList.remove('signup-mode');
-                toggleBtn.textContent = 'Sign Up';
-                toggleBtn.onclick = toggleSignupMode;
-                loginBtn.onclick = login;
-            } else {
-                container.classList.add('signup-mode');
-                toggleBtn.textContent = 'Register';
-                toggleBtn.onclick = signup;
-                loginBtn.onclick = () => { container.classList.remove('signup-mode'); login(); };
-            }
-            document.getElementById('authError').textContent = '';
-        }
-        
-        function signup() {
-            // Implementation of signup function (omitted for brevity, assume it uses createUserWithEmailAndPassword)
-            document.getElementById('authError').textContent = 'Signup function logic needs to be fully implemented.';
-        }
-        
-        function logout() {
-            signOut(auth).catch((error) => {
-                console.error("Logout error:", error);
-            });
-        }
-
-        // --- MODIFIED LOGIN FUNCTION FOR MFA HANDLING ---
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorEl = document.getElementById('authError');
-            errorEl.textContent = '';
-            
-            if (!email || !password) { errorEl.textContent = 'Please enter email and password'; return; }
-            
-            try {
-                // 1. Initial Sign-in Attempt
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                
-                // Success: If no MFA required, proceed normally
-                currentUser = userCredential.user;
-                showApp(); // <-- Now checks for enrollment
-
-            } catch (error) {
-                
-                // 2. Catch the MultiFactor Auth Exception
-                if (error.code === 'auth/multi-factor-auth-required') {
-                    
-                    // Step A: Store the resolver object (required to finish login)
-                    mfaResolver = error.resolver;
-                    // Get the first available factor (the phone number)
-                    const phoneFactor = mfaResolver.hints[0]; 
-                    
-                    // Step B: Start the second factor verification (sends SMS)
-                    // We only need the phone number string, not the whole credentialWithSession
-                    // The PhoneAuthProvider.verifyPhoneNumber call implicitly manages the session
-                    
-                    // Step C: Verify the phone number (sends SMS and uses reCAPTCHA)
-                    // Note: This usage of verifyPhoneNumber is adapted for the MFA flow
-                    // by passing the phone number from the factor hint.
-                    verificationId = await PhoneAuthProvider.verifyPhoneNumber(
-                        phoneFactor.phoneNumber,
-                        recaptchaVerifier 
-                    );
-                    
-                    // UI Change: Hide password container, show MFA container
-                    document.getElementById('authContainer').style.display = 'none';
-                    document.getElementById('mfaContainer').style.display = 'block';
-                    document.getElementById('mfaInstructions').textContent = `Code sent to ${phoneFactor.phoneNumber}. Please enter it below.`;
-                    document.getElementById('mfaError').textContent = '';
-                    
-                } else {
-                    // Handle standard login errors (wrong password, etc.)
-                    errorEl.textContent = 'Login failed: ' + error.message;
-                }
-            }
-        }
-        
-        // --- Function to Resolve the MFA Login after SMS Code is Entered ---
-        async function resolveMfaLogin(smsCode) {
-            const errorEl = document.getElementById('mfaError');
-            errorEl.textContent = '';
-            
-            if (!mfaResolver || !verificationId || !smsCode) { 
-                errorEl.textContent = 'Verification process interrupted. Please try logging in again.';
-                return; 
-            }
-
-            try {
-                // 1. Create the Phone Auth Credential using the received SMS code
-                const phoneAuthCredential = PhoneAuthProvider.credential(
-                    verificationId, 
-                    smsCode
-                );
-
-                // 2. Resolve the multi-factor sign-in
-                const userCredential = await mfaResolver.resolveSignIn(phoneAuthCredential);
-                
-                // Success: Finish login
-                currentUser = userCredential.user;
-                
-                // UI Change: Hide MFA form, show the main app container
-                document.getElementById('mfaContainer').style.display = 'none';
-                showApp();
-
-                // Clear temporary state
-                mfaResolver = null;
-                verificationId = null;
-                document.getElementById('mfaSmsCode').value = '';
-
-            } catch (error) {
-                console.error("MFA Login Resolution Failed:", error);
-                errorEl.textContent = "2FA code incorrect or expired. Please check the code and try again.";
-            }
-        }
-        
-        // --- NEW: START MFA ENROLLMENT (Sends SMS to new number) ---
-        async function startMfaEnrollment() {
-            const phoneNumber = document.getElementById('enrollPhoneNumber').value;
-            const errorEl = document.getElementById('enrollError');
-            errorEl.textContent = '';
-            
-            // Firebase expects phone numbers to be in E.164 format (e.g., +15551234567)
-            const phoneRegex = /^\+[1-9]\d{1,14}$/;
-            if (!phoneNumber || !currentUser || !phoneRegex.test(phoneNumber)) {
-                errorEl.textContent = 'Please enter a valid phone number, including country code (e.g., +15551234567).';
-                return;
-            }
-
-            try {
-                // 1. Start the MFA enrollment process for the current user
-                enrollmentSession = await multiFactor(currentUser).startEnrollment(
-                    {
-                        phoneNumber: phoneNumber,
-                    },
-                    recaptchaVerifier
-                );
-                
-                // 2. UI Change: Hide enrollment form, show MFA code form
-                document.getElementById('enrollMfaContainer').style.display = 'none';
-                document.getElementById('mfaContainer').style.display = 'block';
-                document.getElementById('mfaInstructions').textContent = `Verification code sent to ${phoneNumber}. Please enter it to complete security setup.`;
-                
-                // Change the button action to the final completion step
-                document.querySelector('#mfaContainer button').onclick = () => completeMfaEnrollment(document.getElementById('mfaSmsCode').value);
-
-            } catch (error) {
-                console.error("MFA Enrollment Failed:", error);
-                errorEl.textContent = "Failed to send code: " + error.message;
-            }
-        }
-
-        // --- NEW: COMPLETE MFA ENROLLMENT (Verifies SMS code) ---
-        async function completeMfaEnrollment(smsCode) {
-            const errorEl = document.getElementById('mfaError');
-            errorEl.textContent = '';
-            
-            if (!enrollmentSession || !smsCode) {
-                errorEl.textContent = 'Verification process interrupted. Please try again.';
-                return;
-            }
-
-            try {
-                // 1. Build the Phone Auth Credential using the session and SMS code
-                const phoneAuthCredential = PhoneAuthProvider.credential(
-                    enrollmentSession.verificationId, // Use the verificationId from the session
-                    smsCode
-                );
-
-                // 2. Enroll the second factor to the user's account
-                await multiFactor(currentUser).enroll(phoneAuthCredential);
-
-                // Success: The user now has a phone number enrolled.
-                // Reset the state
-                enrollmentSession = null;
-                document.getElementById('mfaSmsCode').value = '';
-                
-                // Restore the MFA button's original login function
-                document.querySelector('#mfaContainer button').onclick = () => resolveMfaLogin(document.getElementById('mfaSmsCode').value);
-
-                // Finally, show the main app
-                showApp();
-
-            } catch (error) {
-                console.error("MFA Enrollment Completion Failed:", error);
-                errorEl.textContent = "2FA code incorrect or expired. Please check the code and try again.";
-            }
-        }
-        
-        // --- CORE LOGIC: SHOW APP (MODIFIED) ---
-        function showApp() {
-            if (!currentUser) {
-                document.getElementById('authContainer').style.display = 'block';
-                document.getElementById('appContainer').style.display = 'none';
-                return;
-            }
-            
-            // ** CRITICAL CHECK: Check if the user has enrolled at least one MFA factor **
-            const isMfaEnrolled = currentUser.multiFactor.enrolledFactors.length > 0;
-
-            if (!isMfaEnrolled) {
-                console.log("User logged in but needs MFA enrollment.");
-                
-                // Show the enrollment screen and hide everything else
-                document.getElementById('authContainer').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'none';
-                document.getElementById('mfaContainer').style.display = 'none';
-                document.getElementById('enrollMfaContainer').style.display = 'block'; 
-                
-                return; // Stop here, user must enroll
-            }
-
-            // User is signed in and MFA is enrolled. Show the main application.
-            document.getElementById('userEmail').textContent = currentUser.email;
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('enrollMfaContainer').style.display = 'none';
-            document.getElementById('mfaContainer').style.display = 'none';
-            document.getElementById('appContainer').style.display = 'block';
-            
-            // Continue with application data loading (requires implementation of loadReadings, etc.)
-            loadReadings(currentUser.uid); 
-        }
-
-        // --- AUTH STATE LISTENER (MODIFIED) ---
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                // User is signed in. Run showApp, which will check for MFA enrollment.
-                showApp(); 
-            } else {
-                // User is signed out. Show auth screen.
-                document.getElementById('authContainer').style.display = 'block';
-                document.getElementById('appContainer').style.display = 'none';
-                document.getElementById('enrollMfaContainer').style.display = 'none';
-                document.getElementById('mfaContainer').style.display = 'none';
-                setupRecaptcha(); 
-            }
-        });
-        
-        // --- PLACEHOLDER FUNCTIONS (Require full implementation to be fully functional) ---
-        function loadReadings(userId) {
-            console.log(`Loading readings for user: ${userId} (Placeholder)`);
-            // Full implementation would involve:
-            // 1. Fetching data from the Realtime Database using userId.
-            // 2. Populating personNames set and currentPerson.
-            // 3. Rendering all tables (todayAveragesContainer, detailedHistoryContainer, overallAveragesContainer).
-            // 4. Initializing event listeners for table actions (edit, delete).
-        }
-        
-        function handlePersonChange(value) { /* Placeholder */ }
-        function handleCustomNameBlur(value) { /* Placeholder */ }
-        function addReading() { /* Placeholder */ }
-        function updateReading() { /* Placeholder */ }
-        function editReading(id) { /* Placeholder */ }
-        function deleteReading(id) { /* Placeholder */ }
-        function exportFullHistory() { /* Placeholder */ }
-        function exportDetailedHistory() { /* Placeholder */ }
-        function exportOverallAverages() { /* Placeholder */ }
-
-    </script>
-</body>
-</html>
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
