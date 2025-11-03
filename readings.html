@@ -379,6 +379,7 @@
     </style>
 </head>
 <body>
+    
     <div id="authContainer"> 
         <h2>🔒 Health Tracker Access</h2>
         <div style="margin:20px 0;">
@@ -541,42 +542,59 @@
             return `${day}-${month}-${year}`;
         }
         
-        // --- AUTH & SYNC (Unchanged) ---
+        // --- AUTH & SYNC ---
         function toggleSignupMode() {
             const container = document.getElementById('authContainer');
             const toggleBtn = document.getElementById('signupToggleBtn');
-            const loginBtn = document.getElementById('loginBtn');
             const isSignupMode = container.classList.contains('signup-mode');
 
             if (isSignupMode) {
                 container.classList.remove('signup-mode');
                 toggleBtn.textContent = 'Sign Up';
                 toggleBtn.onclick = toggleSignupMode;
-                loginBtn.onclick = login;
             } else {
                 container.classList.add('signup-mode');
                 toggleBtn.textContent = 'Register';
                 toggleBtn.onclick = signup;
-                loginBtn.onclick = () => { container.classList.remove('signup-mode'); login(); };
             }
             document.getElementById('authError').textContent = '';
         }
 
+        // --- CRITICAL FIX APPLIED HERE ---
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorEl = document.getElementById('authError');
-            if (!email || !password) { errorEl.textContent = 'Please enter email and password'; return; }
+            const loginBtn = document.getElementById('loginBtn'); // Reference the login button
+            
+            // 1. Immediate Visual Feedback & Prevention of Double Clicks
+            errorEl.textContent = 'Processing...'; 
+            loginBtn.disabled = true; 
 
-            signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    currentUser = userCredential.user;
-                    errorEl.textContent = '';
-                    showApp();
-                })
-                .catch((error) => {
-                    errorEl.textContent = 'Login failed: ' + error.message;
-                });
+            if (!email || !password) { 
+                errorEl.textContent = 'Please enter email and password'; 
+                loginBtn.disabled = false; // Re-enable on validation failure
+                return; 
+            }
+
+            try {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        currentUser = userCredential.user;
+                        errorEl.textContent = '';
+                        // Do NOT re-enable button, showApp() will hide the container
+                        showApp();
+                    })
+                    .catch((error) => {
+                        // 2. Clear error on promise rejection and re-enable button
+                        errorEl.textContent = 'Login failed: ' + error.message;
+                        loginBtn.disabled = false; 
+                    });
+            } catch(e) {
+                 // 3. Catch any synchronous JS errors that could block the flow
+                errorEl.textContent = 'Critical Error during login: ' + e.message;
+                loginBtn.disabled = false; 
+            }
         }
 
         function signup() {
@@ -585,9 +603,14 @@
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const errorEl = document.getElementById('authError');
+            const signupToggleBtn = document.getElementById('signupToggleBtn');
+            
+            errorEl.textContent = 'Registering...';
+            signupToggleBtn.disabled = true;
 
             if (!name || !email || !password || !confirmPassword || password !== confirmPassword) {
                 errorEl.textContent = 'Please check all fields and ensure passwords match.';
+                signupToggleBtn.disabled = false;
                 return;
             }
 
@@ -599,6 +622,7 @@
                 })
                 .catch((error) => {
                     errorEl.textContent = 'Signup failed: ' + error.message;
+                    signupToggleBtn.disabled = false;
                 });
         }
 
