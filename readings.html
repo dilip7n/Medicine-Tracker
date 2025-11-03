@@ -25,6 +25,17 @@
             padding-bottom: 10px;
         }
 
+        /* Utility Classes for Conditional Display */
+        .display-mobile-only { display: none; }
+        .display-desktop-only { display: block; }
+        
+        @media (max-width: 767px) {
+            .display-desktop-only { display: none !important; }
+            .display-mobile-only { display: block !important; }
+            body { padding: 10px; }
+            .controls, #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer { padding: 15px 10px; }
+        }
+
         /* Controls and Inputs */
         .controls {
             background: white;
@@ -126,14 +137,18 @@
             font-size: 14px;
         }
         
-        /* --- TABLES STYLES (Applies to all new tables) --- */
+        /* --- TABLE STYLES (Desktop) --- */
         #overallAveragesContainer, #todayAveragesContainer, #detailedHistoryContainer {
             margin-top: 30px;
-            padding: 15px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             overflow-x: auto;
+        }
+        #overallAveragesContainer > .display-desktop-only,
+        #todayAveragesContainer > .display-desktop-only,
+        #detailedHistoryContainer > .display-desktop-only {
+             padding: 15px; /* Padding for desktop table container */
         }
 
         .data-table {
@@ -161,6 +176,18 @@
             background-color: #007bff; /* Blue secondary header */
             color: white;
         }
+        
+        /* Desktop Bifurcation for Detailed History */
+        .data-table thead tr:nth-child(2) th:not(:first-child) {
+            border-left: 2px solid #333; 
+        }
+        
+        .data-table tbody tr td:nth-child(3n + 2) { 
+            border-left: 1px solid #ddd;
+        }
+        .data-table tbody tr td:nth-child(3n + 5) { 
+             border-left: 2px dashed #ccc; /* Stronger separation after 3 columns */
+        }
 
         .data-table tbody th {
             text-align: left;
@@ -182,12 +209,7 @@
             font-style: italic;
         }
         
-        /* CRITICAL FIX: Increased font size for Today's individual readings */
-        #todayAveragesContainer .detail-reading {
-            font-size: 1.0em; 
-        }
-        
-        /* NEW: Count Badge Style for Averages Table */
+        /* Prominence for Averages Count */
         .count-badge {
             background-color: #ff5722; /* Deep Orange for prominence */
             color: white;
@@ -200,6 +222,137 @@
             min-width: 25px; 
             text-align: center;
         }
+        
+        /* Action Buttons within Tables */
+        .action-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        .edit-btn {
+            background-color: #4CAF50; /* Green for Edit */
+        }
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* --- CARD VIEW STYLES (Mobile < 768px) --- */
+        .card-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-top: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+        }
+        
+        /* 1. Today's Readings Card Style */
+        .person-card-today .today-reading-block {
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-left: 5px solid #2196F3; /* Prominent indicator */
+            border-radius: 4px;
+            background-color: #f9f9ff;
+        }
+        .person-card-today .reading-time {
+            font-weight: bold;
+            color: #1a4f78;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .person-card-today .value-prominent {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            display: block;
+        }
+
+        /* 2. Overall Averages Card Style */
+        .person-card-average h3 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        .metric-group {
+            margin-top: 10px;
+            border: 1px solid #f0f0f0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .metric-label {
+            font-weight: bold;
+            display: block;
+            background-color: #f7f9fc;
+            padding: 5px;
+            margin: -8px -8px 5px -8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .data-point {
+            margin-bottom: 3px;
+            font-size: 0.95em;
+        }
+
+        /* 3. Detailed History Card Style (The most complex requirement) */
+        
+        /* Date-wise Bifurcation */
+        .date-header {
+            background: #1a4f78;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            border-radius: 6px 6px 0 0;
+            margin-top: 15px;
+            margin-bottom: -15px; /* Collapse margin with the first person card */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        /* Person-wise Bifurcation */
+        .person-card-detailed {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Clear visual separation for the second person onwards on the same date */
+        .person-card-detailed:not(:first-of-type) {
+            border-left: 5px solid #ff5722; /* Strong orange bar for person separation */
+            background-color: #fffaf7; /* Light tint for person grouping */
+        }
+
+        .person-card-detailed .person-header {
+            font-weight: bold;
+            color: #007bff;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+        .person-card-detailed .reading-row {
+            padding: 2px 0;
+            font-size: 0.9em;
+        }
+        .person-card-detailed .reading-value {
+            font-weight: bold;
+            color: #333;
+        }
+
 
         /* Auth Styles */
         #authContainer {
@@ -222,43 +375,7 @@
         .nav-link:hover {
             background: #0d47a1;
         }
-        /* Action Buttons within Tables */
-        .action-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 3px 6px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-            margin-left: 5px;
-        }
-        .edit-btn {
-            background-color: #4CAF50; /* Green for Edit */
-        }
-        .action-btn:hover {
-            opacity: 0.8;
-        }
 
-        /* NEW: Mobile-Specific Bifurcation for Detailed History Table */
-        @media (max-width: 600px) {
-            #detailedHistoryContainer {
-                padding: 10px; /* Adjust padding for mobile */
-            }
-
-            /* Apply a strong visual split for new person data starting from the second person's BP column */
-            /* Targets the BP column (td:nth-child(3n + 1)) of the 2nd, 3rd, 4th person, etc. (:not(:first-child)) */
-            .data-table tbody tr td:nth-child(3n + 1):not(:first-child) { 
-                border-left: 5px solid #1a4f78 !important; /* Thick, contrasting blue line */
-                background-color: #f0f8ff !important; /* Light blue background for grouping */
-            }
-
-            /* Ensure the BP column of the *first* person remains visually connected to the date */
-            .data-table tbody tr td:first-child {
-                border-left: 1px solid #eee !important;
-                background-color: transparent !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -345,22 +462,12 @@
         </div>
         
         <div id="todayAveragesContainer">
-            <h2>☀️ Today's Individual Readings</h2> 
             </div>
 
         <div id="detailedHistoryContainer">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2>
-                <button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button>
-            </div>
-            <p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>
             </div>
 
         <div id="overallAveragesContainer">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>📈 Overall Averages Summary</h2>
-                <button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button>
-            </div>
             </div>
 
     </div>
@@ -414,6 +521,10 @@
         document.getElementById('recordTime').value = today.toTimeString().split(' ')[0].substring(0, 5); 
         const todayDateString = today.toISOString().split('T')[0];
 
+        // --- UTILITY: Check if device is considered mobile/tablet view ---
+        function isMobileView() {
+            return window.innerWidth < 768; // Standard breakpoint
+        }
 
         // --- UTILITY: Date Formatting (DD-MMM-YY) ---
         function formatDate(dateString) {
@@ -430,7 +541,7 @@
             return `${day}-${month}-${year}`;
         }
         
-        // --- AUTH & SYNC ---
+        // --- AUTH & SYNC (Unchanged) ---
         function toggleSignupMode() {
             const container = document.getElementById('authContainer');
             const toggleBtn = document.getElementById('signupToggleBtn');
@@ -578,7 +689,7 @@
             });
         }
         
-        // --- PERSON MANAGEMENT ---
+        // --- PERSON MANAGEMENT (Unchanged) ---
         function updatePersonDropdown(forceSelect = false) {
             const select = document.getElementById('personSelect');
             const customInput = document.getElementById('personCustomInput');
@@ -660,7 +771,7 @@
             }
         }
         
-        // --- FORM STATE MANAGEMENT ---
+        // --- FORM STATE MANAGEMENT (Unchanged) ---
         function resetForm() {
             const now = new Date();
             document.getElementById('recordDate').value = now.toISOString().split('T')[0];
@@ -683,8 +794,7 @@
         }
 
 
-        // --- CORE CRUD & UI LOGIC ---
-
+        // --- CORE CRUD & UI LOGIC (Unchanged) ---
         function getReadingData(isUpdate = false) {
             if (!currentUser || !currentPerson) {
                 alert("Please select or enter a person's name first.");
@@ -803,7 +913,6 @@
             if (!currentUser || allReadings.length === 0) { 
                 const emptyMessage = '<p style="text-align:center; color:#777;">No readings found. Add one above!</p>';
                 document.getElementById('todayAveragesContainer').innerHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>${emptyMessage}`;
-                // Updated Title and Description on empty state
                 document.getElementById('detailedHistoryContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>${emptyMessage}`;
                 document.getElementById('overallAveragesContainer').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>${emptyMessage}`;
                 return;
@@ -873,20 +982,24 @@
         }
         
         // --- FORMATTING HELPERS ---
-        const formatBP = (sys, dia) => {
+        const formatBP = (sys, dia, isMobile = false) => {
             const bpCount = Math.min(sys.count, dia.count); // BP count should be the minimum of S and D
             if (sys.avg === null || dia.avg === null) return `<span class="no-data">N/A</span>`;
-            // UPDATED: Use count-badge class for prominence
-            return `<span class="avg-bp">${sys.avg.toFixed(0)}/${dia.avg.toFixed(0)}</span> <span class="count-badge">${bpCount} R</span>`;
+            
+            const value = `${sys.avg.toFixed(isMobile ? 0 : 0)}/${dia.avg.toFixed(isMobile ? 0 : 0)}`;
+            const count = isMobile ? '' : ` <span class="count-badge">${bpCount} R</span>`;
+            return `<span class="avg-bp">${value}</span>${count}`;
         };
         
-        const formatMetric = (data) => {
+        const formatMetric = (data, isMobile = false) => {
             if (data.avg === null) return `<span class="no-data">N/A</span>`;
-            // UPDATED: Use count-badge class for prominence
-            return `<span class="avg-reading">${data.avg.toFixed(1)}</span> <span class="count-badge">${data.count} R</span>`;
+            
+            const value = data.avg.toFixed(1);
+            const count = isMobile ? '' : ` <span class="count-badge">${data.count} R</span>`;
+            return `<span class="avg-reading">${value}</span>${count}`;
         };
         
-        // --- DISPLAY 1: Today's Individual Readings Table ---
+        // --- DISPLAY 1: Today's Individual Readings (Table/Card) ---
         function displayTodayReadings(readingsByPerson) {
             const container = document.getElementById('todayAveragesContainer');
             
@@ -901,38 +1014,35 @@
                 return false;
             }).sort();
             
-            // FIX: Correctly call formatDate function in the header
             let contentHTML = `<h2>☀️ Today's Individual Readings (${formatDate(todayDateString)})</h2>`;
-
             if (personsWithData.length === 0) {
                 container.innerHTML = contentHTML + `<p style="text-align:center; color:#777;">No readings recorded today.</p>`;
                 return;
             }
             
+            // --- DESKTOP TABLE VIEW ---
+            let desktopHTML = `<div class="display-desktop-only">`;
             const allTimes = new Set();
             personsWithData.forEach(person => {
                 allPersonTodayReadings[person].forEach(r => {
                     if (r.time) allTimes.add(r.time);
                 });
             });
-            
             const sortedTimes = Array.from(allTimes).sort();
 
-            let tableHTML = `
+            desktopHTML += `
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Time</th>
-                            ${personsWithData.map(person => `
-                                <th>${person}</th>
-                            `).join('')}
+                            ${personsWithData.map(person => `<th>${person}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
             `;
 
             sortedTimes.forEach(time => {
-                tableHTML += `<tr><th>${time}</th>`;
+                desktopHTML += `<tr><th>${time}</th>`;
                 
                 personsWithData.forEach(person => {
                     const reading = allPersonTodayReadings[person].find(r => r.time === time);
@@ -947,7 +1057,7 @@
                         const glucose = glu !== null ? glu.toFixed(1) : '';
                         const weight = wei !== null ? wei.toFixed(1) : '';
                         
-                        tableHTML += `
+                        desktopHTML += `
                             <td style="text-align: left;">
                                 <div class="detail-reading" style="font-weight: bold;">
                                     BP: ${bp || '<span class="no-data">N/A</span>'} | 
@@ -959,32 +1069,69 @@
                             </td>
                         `;
                     } else {
-                        tableHTML += `<td><span class="no-data">-</span></td>`;
+                        desktopHTML += `<td><span class="no-data">-</span></td>`;
                     }
                 });
                 
-                tableHTML += `</tr>`;
+                desktopHTML += `</tr>`;
             });
 
-            tableHTML += `</tbody></table>`;
-            container.innerHTML = contentHTML + tableHTML;
+            desktopHTML += `</tbody></table></div>`;
+            
+            // --- MOBILE CARD VIEW ---
+            let mobileHTML = `<div class="card-container display-mobile-only">`;
+            
+            personsWithData.forEach(person => {
+                mobileHTML += `<div class="person-card-today card">`;
+                mobileHTML += `<h3 class="person-header">${person}</h3>`;
+                
+                allPersonTodayReadings[person].forEach(reading => {
+                    const sys = Number(reading.systole) || null;
+                    const dia = Number(reading.diastole) || null;
+                    const glu = Number(reading.glucose) || null;
+                    const wei = Number(reading.weight) || null;
+
+                    const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : '<span class="no-data">N/A</span>';
+                    const glucose = glu !== null ? glu.toFixed(1) : '<span class="no-data">N/A</span>';
+                    const weight = wei !== null ? wei.toFixed(1) : '<span class="no-data">N/A</span>';
+
+                    mobileHTML += `
+                        <div class="today-reading-block">
+                            <span class="reading-time">${reading.time}</span>
+                            <span class="value-prominent">BP: ${bp} | Gl: ${glucose} | W: ${weight}</span>
+                            <div style="margin-top: 5px;">
+                                <button class="action-btn edit-btn" onclick="editReading('${reading.id}')">✏️ Edit</button>
+                                <button class="action-btn" onclick="deleteReading('${reading.id}')">❌ Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                mobileHTML += `</div>`;
+            });
+
+            mobileHTML += `</div>`;
+            
+            container.innerHTML = contentHTML + desktopHTML + mobileHTML;
         }
 
 
-        // --- DISPLAY 2: Overall Averages Summary Table ---
+        // --- DISPLAY 2: Overall Averages Summary (Table/Card) ---
         function displayAllAverages(allPersonAverages) {
             const container = document.getElementById('overallAveragesContainer');
             const personsWithData = Object.keys(allPersonAverages).filter(p => {
                 const results = allPersonAverages[p];
                 return results.systole.day.count > 0 || results.systole.week.count > 0 || results.systole.month.count > 0 || results.glucose.month.count > 0 || results.weight.month.count > 0;
-            });
+            }).sort();
             
+            const titleHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>`;
+
             if (personsWithData.length === 0) {
-                container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div><p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
+                container.innerHTML = titleHTML + `<p style="text-align:center; color:#777;">No readings available yet to calculate averages.</p>`;
                 return;
             }
 
-            let tableHTML = `
+            // --- DESKTOP TABLE VIEW ---
+            let desktopHTML = `<div class="display-desktop-only">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -1008,10 +1155,10 @@
                     <tbody>
             `;
 
-            personsWithData.sort().forEach(person => {
+            personsWithData.forEach(person => {
                 const results = allPersonAverages[person];
                 
-                tableHTML += `
+                desktopHTML += `
                     <tr>
                         <th>${person}</th>
                         <td>${formatBP(results.systole.day, results.diastole.day)}</td>
@@ -1027,13 +1174,43 @@
                 `;
             });
 
-            tableHTML += `</tbody></table>`;
+            desktopHTML += `</tbody></table></div>`;
             
-            // Re-inject the surrounding container HTML with the button
-            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📈 Overall Averages Summary</h2><button class="table-export-btn" onclick="exportOverallAverages()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
+            // --- MOBILE CARD VIEW ---
+            let mobileHTML = `<div class="card-container display-mobile-only">`;
+            
+            personsWithData.forEach(person => {
+                const results = allPersonAverages[person];
+                
+                mobileHTML += `<div class="person-card-average card">
+                    <h3>${person}</h3>
+                    <div class="metric-group">
+                        <span class="metric-label">Blood Pressure (Sys/Dia mmHg)</span>
+                        <div class="data-point">Daily: <span class="reading-value">${formatBP(results.systole.day, results.diastole.day, true)}</span></div>
+                        <div class="data-point">Weekly: <span class="reading-value">${formatBP(results.systole.week, results.diastole.week, true)}</span></div>
+                        <div class="data-point">Monthly: <span class="reading-value">${formatBP(results.systole.month, results.diastole.month, true)}</span></div>
+                    </div>
+                    <div class="metric-group">
+                        <span class="metric-label">Glucose (mg/dL)</span>
+                        <div class="data-point">Daily: <span class="reading-value">${formatMetric(results.glucose.day, true)}</span></div>
+                        <div class="data-point">Weekly: <span class="reading-value">${formatMetric(results.glucose.week, true)}</span></div>
+                        <div class="data-point">Monthly: <span class="reading-value">${formatMetric(results.glucose.month, true)}</span></div>
+                    </div>
+                    <div class="metric-group">
+                        <span class="metric-label">Weight (kg/lbs)</span>
+                        <div class="data-point">Daily: <span class="reading-value">${formatMetric(results.weight.day, true)}</span></div>
+                        <div class="data-point">Weekly: <span class="reading-value">${formatMetric(results.weight.week, true)}</span></div>
+                        <div class="data-point">Monthly: <span class="reading-value">${formatMetric(results.weight.month, true)}</span></div>
+                    </div>
+                </div>`;
+            });
+
+            mobileHTML += `</div>`;
+            
+            container.innerHTML = titleHTML + desktopHTML + mobileHTML;
         }
         
-        // --- DISPLAY 3: Detailed 30-Day History Table (UPDATED TITLE/DESC) ---
+        // --- DISPLAY 3: Detailed 30-Day History (Table/Card) ---
         function displayDetailedHistory(readingsByPerson) {
             const container = document.getElementById('detailedHistoryContainer');
             
@@ -1053,58 +1230,52 @@
                 }
             });
 
+            const sortedPersonNames = Array.from(personNames).sort();
+            
+            const descriptionHTML = `<p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p>`;
+            const titleHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>`;
 
             if (personNames.size === 0 || uniqueDates.length === 0) {
-                 // Updated Title and Description on empty state
-                 container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div><p style="text-align: center; font-style: italic; color: #555;">Showing the **latest recorded reading** for each person on a given day across the last 30 days.</p><p style="text-align:center; color:#777;">No history to display.</p>`;
+                 container.innerHTML = titleHTML + descriptionHTML + `<p style="text-align:center; color:#777;">No history to display.</p>`;
                  return;
             }
 
-            // 3. Generate the table
-            const sortedPersonNames = Array.from(personNames).sort();
-
-            let tableHTML = `
-                <p style="text-align: center; font-style: italic; color: #555;">
-                    Showing the **latest recorded reading** for each person on a given day across the last 30 days. 
-                    For a full export, please use the download button above.
-                </p>
+            // --- DESKTOP TABLE VIEW ---
+            let desktopHTML = `<div class="display-desktop-only">
+                ${descriptionHTML}
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th rowspan="3">Date</th>
+                            <th rowspan="2">Date</th>
                             <th colspan="${sortedPersonNames.length * 3}" style="background-color: #11628e;">Readings by Person</th>
                         </tr>
                         <tr>
                             ${sortedPersonNames.map((name, index) => {
-                                // Keep desktop border: Add left border for visual separation of people (except the first one)
+                                // Desktop header border
                                 const style = index > 0 ? 'style="border-left: 2px solid #333; background-color: #007bff;"' : 'style="background-color: #007bff;"';
                                 return `<th colspan="3" ${style}>${name}</th>`;
                             }).join('')}
                         </tr>
                         <tr>
                             <th style="font-size: 0.8em; color: #555;">(Latest to Oldest)</th>
-                            ${sortedPersonNames.map((name, index) => {
-                                // Use CSS for all data cell bifurcation now, no inline style
-                                return `
-                                    <th>BP</th>
-                                    <th>Glucose</th>
-                                    <th>Weight</th>
-                                `;
-                            }).join('')}
+                            ${sortedPersonNames.map(() => `
+                                <th>BP</th>
+                                <th>Glucose</th>
+                                <th>Weight</th>
+                            `).join('')}
                         </tr>
                     </thead>
                     <tbody>
             `;
             
             uniqueDates.forEach(date => {
-                tableHTML += `<tr><th>${formatDate(date)}</th>`;
+                desktopHTML += `<tr><th>${formatDate(date)}</th>`;
                 
                 sortedPersonNames.forEach((person) => {
                     const key = `${date}_${person}`;
                     const r = detailedHistoryDataCache[key]; // Use the cached map
                     
                     if (r) {
-                        // FIX: Explicitly check for null/undefined after Number() conversion.
                         const sys = Number(r.systole) || null;
                         const dia = Number(r.diastole) || null;
                         const glu = Number(r.glucose) || null;
@@ -1114,29 +1285,63 @@
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         
-                        // NOTE: Relying on CSS (td:nth-child(3n+1)) for mobile and desktop bifurcation now
-                        tableHTML += `
+                        desktopHTML += `
                             <td class="detail-reading">${bp}</td>
                             <td class="detail-reading">${glucose}</td>
                             <td class="detail-reading">${weight}</td>
                         `;
                     } else {
-                        // colspan=3 is used for an empty block
-                        tableHTML += `
+                        desktopHTML += `
                             <td colspan="3"><span class="no-data">-</span></td>
                         `;
                     }
                 });
                 
-                tableHTML += `</tr>`;
+                desktopHTML += `</tr>`;
             });
 
-            tableHTML += `</tbody></table>`;
-            // Re-inject the surrounding container HTML with the button and the updated title
-            container.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><h2>📅 Detailed 30-Day Reading History (Latest Reading/Day)</h2><button class="table-export-btn" onclick="exportDetailedHistory()">⬇️ Download Table (CSV)</button></div>` + tableHTML;
+            desktopHTML += `</tbody></table></div>`;
+            
+            // --- MOBILE CARD VIEW ---
+            let mobileHTML = `<div class="card-container display-mobile-only">`;
+
+            uniqueDates.forEach(date => {
+                // Date-wise Bifurcation
+                mobileHTML += `<div class="date-header">${formatDate(date)}</div>`;
+                
+                sortedPersonNames.forEach((person) => {
+                    const key = `${date}_${person}`;
+                    const r = detailedHistoryDataCache[key];
+                    
+                    if (r) {
+                        const sys = Number(r.systole) || null;
+                        const dia = Number(r.diastole) || null;
+                        const glu = Number(r.glucose) || null;
+                        const wei = Number(r.weight) || null;
+                        
+                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
+                        const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
+                        
+                        // Person-wise Card
+                        mobileHTML += `<div class="person-card-detailed">
+                            <div class="person-header">${person}</div>
+                            <div class="reading-row">BP: <span class="reading-value">${bp}</span></div>
+                            <div class="reading-row">Glucose: <span class="reading-value">${glucose}</span></div>
+                            <div class="reading-row">Weight: <span class="reading-value">${weight}</span></div>
+                        </div>`;
+                    }
+                    // Skip if no reading for person/date
+                });
+            });
+
+            mobileHTML += `</div>`;
+
+
+            container.innerHTML = titleHTML + desktopHTML + mobileHTML;
         }
 
-        // --- EXPORT FUNCTIONALITY (CSV/Excel) ---
+        // --- EXPORT FUNCTIONALITY (CSV/Excel) - Unchanged ---
         
         // UTILITY: General CSV Download Function
         function triggerDownload(csvContent, filename) {
@@ -1157,7 +1362,7 @@
             alert(`Successfully generated CSV file: ${filename}`);
         }
 
-        // EXPORT 1: Full History Download (Unchanged)
+        // EXPORT 1: Full History Download
         function exportFullHistory() {
             if (allReadings.length === 0) {
                 alert("No history data available to export.");
@@ -1193,7 +1398,7 @@
             triggerDownload(csvContent, `Health_Readings_Full_Export_${timestamp}.csv`);
         }
 
-        // EXPORT 2: Overall Averages Download (Unchanged)
+        // EXPORT 2: Overall Averages Download
         function exportOverallAverages() {
             if (Object.keys(allPersonAveragesCache).length === 0) {
                 alert("No averages available to export.");
@@ -1229,7 +1434,7 @@
                 const monthlyWeight = getAvg(results.weight.month);
 
                 // Use quotes around the person's name
-                const escapedPerson = `"${person.replace(/"/g, '""')}"`;
+                const escapedPerson = `"${person.replace(/"/g, '""")"`;
 
                 csvContent += `${escapedPerson},${dailyBP},${dailyGlucose},${dailyWeight},${weeklyBP},${weeklyGlucose},${weeklyWeight},${monthlyBP},${monthlyGlucose},${monthlyWeight}\n`;
             });
@@ -1238,7 +1443,7 @@
             triggerDownload(csvContent, `Overall_Averages_Export_${timestamp}.csv`);
         }
 
-        // EXPORT 3: Detailed 30-Day History Download (Fixed CSV alignment)
+        // EXPORT 3: Detailed 30-Day History Download
         function exportDetailedHistory() {
             const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
                 .sort((a, b) => new Date(b) - new Date(a)) 
@@ -1251,7 +1456,6 @@
             }
 
             // 1. Prepare Header
-            // FIX: Correct header generation for proper column alignment in CSV
             let header1 = "Date,";
             header1 += sortedPersonNames.map(name => `"${name} BP","${name} Glucose","${name} Weight"`).join(',') + "\n";
             let csvContent = header1;
@@ -1287,6 +1491,13 @@
             const timestamp = new Date().toISOString().slice(0, 10);
             triggerDownload(csvContent, `Detailed_History_Export_${timestamp}.csv`);
         }
+        
+        // Initial setup on resize to re-render views if necessary
+        window.addEventListener('resize', loadReadings);
+        // Clean up on unmount (important for single-page apps, but good practice)
+        window.addEventListener('beforeunload', () => {
+             window.removeEventListener('resize', loadReadings);
+        });
 
     </script>
 </body>
