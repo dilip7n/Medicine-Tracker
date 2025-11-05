@@ -636,15 +636,10 @@
         let allReadings = [];
         let allPersonAveragesCache = {}; // Cache for overall averages
         
-        /* 💡 NEW CACHE STRUCTURE: To implement "latest per metric" merging
+        /* 💡 NEW CACHE STRUCTURE: Latest single reading (by time/date) per person/day
          * Structure will be: detailedHistoryDataCache[date_person] = { 
-         * time: latest_time, // Overall latest time for sorting/display
-         * id: latest_id,     // The ID of the latest entry
-         * timestamp: latest_timestamp, // The timestamp of the latest overall entry
-         * systole: { value: S, timestamp: T, time: TIME },
-         * diastole: { value: D, timestamp: T, time: TIME },
-         * glucose: { value: G, timestamp: T, time: TIME },
-         * weight: { value: W, timestamp: T, time: TIME }
+         * ...full reading object (id, date, time, person, metrics)
+         * timestamp: calculated_timestamp // For internal sorting
          * }
         */
         let detailedHistoryDataCache = {}; 
@@ -1427,54 +1422,28 @@
             
             detailedHistoryDataCache = {}; // Reset cache
             
-            // 2. CRITICAL: Implement "Latest Per Metric" merging
+            // 2. CRITICAL FIX: Implement "Single Latest Reading" by date/time per person/day
             allReadings.forEach(r => {
-                if (!r.person) return; 
+                if (!r.person || !r.date) return; 
                 const key = `${r.date}_${r.person}`;
-
-                // Initialize cache entry if it doesn't exist
-                if (!detailedHistoryDataCache[key]) {
-                    detailedHistoryDataCache[key] = {
-                        time: r.time, // Initialize with the first time found
-                        id: r.id,     // Keep the latest ID
-                        timestamp: r.timestamp,
-                        systole: { value: null, timestamp: 0, time: null },
-                        diastole: { value: null, timestamp: 0, time: null },
-                        glucose: { value: null, timestamp: 0, time: null },
-                        weight: { value: null, timestamp: 0, time: null }
-                    };
-                }
                 
-                const entry = detailedHistoryDataCache[key];
-
-                // Update BP if reading has Systole OR Diastole, and it's newer than the currently stored BP
-                if ((r.systole !== null || r.diastole !== null) && r.timestamp > Math.min(entry.systole.timestamp, entry.diastole.timestamp)) {
-                    // Update both BP components based on the reading's timestamp
-                    entry.systole = { value: r.systole, timestamp: r.timestamp, time: r.time };
-                    entry.diastole = { value: r.diastole, timestamp: r.timestamp, time: r.time };
-                }
-
-                // Update Glucose if reading has Glucose, and it's newer
-                if (r.glucose !== null && r.timestamp > entry.glucose.timestamp) {
-                    entry.glucose = { value: r.glucose, timestamp: r.timestamp, time: r.time };
-                }
-
-                // Update Weight if reading has Weight, and it's newer
-                if (r.weight !== null && r.timestamp > entry.weight.timestamp) {
-                    entry.weight = { value: r.weight, timestamp: r.timestamp, time: r.time };
-                }
-
-                // Update the overall time/id if the current reading is the latest overall entry for display/edit
-                if (r.timestamp > entry.timestamp) {
-                    entry.time = r.time;
-                    entry.id = r.id;
-                    entry.timestamp = r.timestamp;
+                // Use the reading's explicit timestamp if available, otherwise calculate it
+                // We use the full date/time string to generate a sortable value
+                const readingTimeForSort = r.timestamp || new Date(r.date + ' ' + (r.time || '00:00')).getTime();
+                
+                // Initialize entry or check if current reading is newer (higher timestamp)
+                if (!detailedHistoryDataCache[key] || readingTimeForSort > detailedHistoryDataCache[key].timestamp) {
+                    // Store the entire reading object as the "latest" for the day/person
+                    detailedHistoryDataCache[key] = {
+                        ...r, // Copy all fields (date, time, person, metrics, id)
+                        timestamp: readingTimeForSort // Add calculated timestamp for easy comparison
+                    };
                 }
             });
 
             const sortedPersonNames = Array.from(personNames).sort();
             
-            const descriptionHTML = `<p class="display-desktop-only" style="text-align: center; font-style: italic; color: #555; padding-bottom: 15px;">Showing the **latest recorded reading** for each metric (BP, Glucose, Weight) for each person on a given day across the last 30 days.</p>`;
+            const descriptionHTML = `<p class="display-desktop-only" style="text-align: center; font-style: italic; color: #555; padding-bottom: 15px;">Showing the **latest recorded reading** for each person on a given day across the last 30 days. Edit/Delete actions apply to this single latest entry.</p>`;
             
             // USE NEW WRAPPER (Title Bar + Button Below)
             const titleHTML = `
@@ -1484,9 +1453,9 @@
                 </div>
             `;
 
-            // 🚨 FIX: Remove redundant empty check. If loadReadings() passed, we proceed.
-            if (allReadings.length === 0) { 
-                 // Should have been caught by loadReadings, but as a safeguard...
+            // Display "No history" message if no dates found, even if allReadings is technically > 0 
+            // (e.g., if all readings are missing dates, but we assume that's not the case)
+            if (uniqueDates.length === 0) {
                  container.innerHTML = titleHTML + descriptionHTML + `<p style="text-align:center; color:#777;">No history to display.</p>`;
                  return;
             }
@@ -1498,7 +1467,7 @@
                     <thead>
                         <tr>
                             <th rowspan="2">Date</th>
-                            <th colspan="${sortedPersonNames.length * 3}" style="background-color: #11628e;">Latest Readings by Person</th>
+                            <th colspan="${sortedPersonNames.length * 3}" style="background-color: #11628e;">Latest Reading by Person</th>
                         </tr>
                         <tr>
                             ${sortedPersonNames.map((name, index) => {
@@ -1524,16 +1493,27 @@
                 
                 sortedPersonNames.forEach((person) => {
                     const key = `${date}_${person}`;
-                    const r = detailedHistoryDataCache[key]; // Use the cached map
+                    const r = detailedHistoryDataCache[key]; // Use the single latest reading
                     
-                    if (r && (r.systole.value !== null || r.glucose.value !== null || r.weight.value !== null)) {
-                        // Use the values from the merged cache
-                        const sys = r.systole.value;
-                        const dia = r.diastole.value;
-                        const glu = r.glucose.value;
-                        const wei = r.weight.value;
+                    // Check if *any* metric exists in the single latest reading
+                    if (r && (r.systole !== null || r.diastole !== null || r.glucose !== null || r.weight !== null)) {
                         
-                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
+                        // Use the values directly from the reading object
+                        const sys = r.systole;
+                        const dia = r.diastole;
+                        const glu = r.glucose;
+                        const wei = r.weight;
+                        
+                        // BP display logic (if both null -> N/A, otherwise show available)
+                        let bp = `<span class="no-data">N/A</span>`;
+                        if (sys !== null && dia !== null) {
+                            bp = `${sys}/${dia}`;
+                        } else if (sys !== null) {
+                            bp = `${sys}/N/A`;
+                        } else if (dia !== null) {
+                            bp = `N/A/${dia}`;
+                        }
+                        
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         
@@ -1564,16 +1544,25 @@
                 
                 sortedPersonNames.forEach((person) => {
                     const key = `${date}_${person}`;
-                    const r = detailedHistoryDataCache[key];
+                    const r = detailedHistoryDataCache[key]; // Use the single latest reading
                     
-                    if (r && (r.systole.value !== null || r.glucose.value !== null || r.weight.value !== null)) {
-                        // Use the merged metric values and the overall latest time for the card header
-                        const sys = r.systole.value;
-                        const dia = r.diastole.value;
-                        const glu = r.glucose.value;
-                        const wei = r.weight.value;
+                    if (r && (r.systole !== null || r.diastole !== null || r.glucose !== null || r.weight !== null)) {
+                        // Use the single latest reading values
+                        const sys = r.systole;
+                        const dia = r.diastole;
+                        const glu = r.glucose;
+                        const wei = r.weight;
                         
-                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : `<span class="no-data">N/A</span>`;
+                        // BP display logic (if both null -> N/A, otherwise show available)
+                        let bp = `<span class="no-data">N/A</span>`;
+                        if (sys !== null && dia !== null) {
+                            bp = `${sys}/${dia}`;
+                        } else if (sys !== null) {
+                            bp = `${sys}/N/A`;
+                        } else if (dia !== null) {
+                            bp = `N/A/${dia}`;
+                        }
+                        
                         const glucose = glu !== null ? glu.toFixed(1) : `<span class="no-data">N/A</span>`;
                         const weight = wei !== null ? wei.toFixed(1) : `<span class="no-data">N/A</span>`;
                         
@@ -1581,22 +1570,16 @@
                         mobileHTML += `<div class="person-card-detailed">
                             <div class="person-header">${person}</div>
                             
-                            <div class="reading-row"><span>Latest Overall Time:</span> <span class="reading-value">${r.time}</span></div> 
+                            <div class="reading-row"><span>Time:</span> <span class="reading-value">${r.time}</span></div> 
                             
                             <div class="reading-row"><span>BP (Sys/Dia):</span> 
-                                <span class="reading-value">${bp} 
-                                    <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.systole.time || 'N/A'})</span>
-                                </span>
+                                <span class="reading-value">${bp}</span>
                             </div>
                             <div class="reading-row"><span>Glucose:</span> 
-                                <span class="reading-value">${glucose}
-                                    <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.glucose.time || 'N/A'})</span>
-                                </span>
+                                <span class="reading-value">${glucose}</span>
                             </div>
                             <div class="reading-row"><span>Weight:</span> 
-                                <span class="reading-value">${weight}
-                                    <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.weight.time || 'N/A'})</span>
-                                </span>
+                                <span class="reading-value">${weight}</span>
                             </div>
                             
                             <div style="margin-top: 10px; text-align: right; padding-top: 5px; border-top: 1px dashed #eee;">
@@ -1615,7 +1598,7 @@
             container.innerHTML = titleHTML + desktopHTML + mobileHTML;
         }
 
-        // --- EXPORT FUNCTIONALITY (CSV/Excel) - Updated to use Merged Data ---
+        // --- EXPORT FUNCTIONALITY (CSV/Excel) - Updated to use Single Latest Reading ---
         
         // UTILITY: General CSV Download Function (Unchanged)
         function triggerDownload(csvContent, filename) {
@@ -1717,7 +1700,7 @@
             triggerDownload(csvContent, `Overall_Averages_Export_${timestamp}.csv`);
         }
 
-        // EXPORT 3: Detailed 30-Day History Download (UPDATED)
+        // EXPORT 3: Detailed 30-Day History Download (UPDATED for Single Latest Reading)
         function exportDetailedHistory() {
             const uniqueDates = Array.from(new Set(allReadings.map(r => r.date)))
                 .sort((a, b) => new Date(b) - new Date(a)) 
@@ -1731,8 +1714,8 @@
 
             // 1. Prepare Header
             let header1 = "Date,";
-            // Include time for each metric in the header for clarity
-            header1 += sortedPersonNames.map(name => `"${name} BP (Sys/Dia)","${name} BP Time","${name} Glucose","${name} Glucose Time","${name} Weight","${name} Weight Time"`).join(',') + "\n";
+            // Header for single latest reading: BP, Glucose, Weight, Time
+            header1 += sortedPersonNames.map(name => `"${name} BP (Sys/Dia)","${name} Glucose","${name} Weight","${name} Time"`).join(',') + "\n";
             let csvContent = header1;
 
             // 2. Populate Rows
@@ -1741,32 +1724,30 @@
                 
                 sortedPersonNames.forEach(person => {
                     const key = `${date}_${person}`;
-                    const r = detailedHistoryDataCache[key]; // Use the cached map
+                    const r = detailedHistoryDataCache[key]; // Use the cached map (now single reading)
                     
-                    if (r && (r.systole.value !== null || r.glucose.value !== null || r.weight.value !== null)) {
+                    if (r && (r.systole !== null || r.diastole !== null || r.glucose !== null || r.weight !== null)) {
                         
-                        // Use the values from the merged cache
-                        const sys = r.systole.value;
-                        const dia = r.diastole.value;
-                        const glu = r.glucose.value;
-                        const wei = r.weight.value;
+                        // Use the values directly from the single reading object
+                        const sys = r.systole;
+                        const dia = r.diastole;
+                        const glu = r.glucose;
+                        const wei = r.weight;
                         
-                        // BP values
-                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : '';
-                        const bpTime = (sys !== null && dia !== null) ? r.systole.time || '' : '';
+                        // BP value (use toFixed for display)
+                        const bp = (sys !== null && dia !== null) ? `${sys}/${dia}` : (sys !== null ? `${sys}/` : (dia !== null ? `/${dia}` : '')); // Allow partial BP in CSV
                         
-                        // Glucose values
+                        // Glucose and Weight values (use toFixed for display)
                         const glucose = glu !== null ? glu.toFixed(1) : '';
-                        const glucoseTime = glu !== null ? r.glucose.time || '' : '';
-                        
-                        // Weight values
                         const weight = wei !== null ? wei.toFixed(1) : '';
-                        const weightTime = wei !== null ? r.weight.time || '' : '';
                         
-                        row += `${bp},${bpTime},${glucose},${glucoseTime},${weight},${weightTime},`;
+                        // Use the overall time for this single latest reading
+                        const time = r.time || '';
+                        
+                        row += `${bp},${glucose},${weight},${time},`;
                     } else {
-                        // 6 empty commas for N/A metrics and their times
-                        row += `,,,,,,`; 
+                        // 4 empty commas for N/A metrics and time
+                        row += `,,,,`; 
                     }
                 });
                 
