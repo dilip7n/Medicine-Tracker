@@ -640,10 +640,11 @@
          * Structure will be: detailedHistoryDataCache[date_person] = { 
          * time: latest_time, // Overall latest time for sorting/display
          * id: latest_id,     // The ID of the latest entry
-         * systole: { value: S, timestamp: T },
-         * diastole: { value: D, timestamp: T },
-         * glucose: { value: G, timestamp: T },
-         * weight: { value: W, timestamp: T }
+         * timestamp: latest_timestamp, // The timestamp of the latest overall entry
+         * systole: { value: S, timestamp: T, time: TIME },
+         * diastole: { value: D, timestamp: T, time: TIME },
+         * glucose: { value: G, timestamp: T, time: TIME },
+         * weight: { value: W, timestamp: T, time: TIME }
          * }
         */
         let detailedHistoryDataCache = {}; 
@@ -1426,7 +1427,7 @@
             
             detailedHistoryDataCache = {}; // Reset cache
             
-            // 2. CRITICAL FIX: Implement "Latest Per Metric" merging
+            // 2. CRITICAL: Implement "Latest Per Metric" merging
             allReadings.forEach(r => {
                 if (!r.person) return; 
                 const key = `${r.date}_${r.person}`;
@@ -1446,7 +1447,7 @@
                 
                 const entry = detailedHistoryDataCache[key];
 
-                // Update BP if reading has Systole OR Diastole, and it's newer
+                // Update BP if reading has Systole OR Diastole, and it's newer than the currently stored BP
                 if ((r.systole !== null || r.diastole !== null) && r.timestamp > Math.min(entry.systole.timestamp, entry.diastole.timestamp)) {
                     // Update both BP components based on the reading's timestamp
                     entry.systole = { value: r.systole, timestamp: r.timestamp, time: r.time };
@@ -1483,7 +1484,9 @@
                 </div>
             `;
 
-            if (personNames.size === 0 || uniqueDates.length === 0) {
+            // 🚨 FIX: Remove redundant empty check. If loadReadings() passed, we proceed.
+            if (allReadings.length === 0) { 
+                 // Should have been caught by loadReadings, but as a safeguard...
                  container.innerHTML = titleHTML + descriptionHTML + `<p style="text-align:center; color:#777;">No history to display.</p>`;
                  return;
             }
@@ -1578,11 +1581,11 @@
                         mobileHTML += `<div class="person-card-detailed">
                             <div class="person-header">${person}</div>
                             
-                            <div class="reading-row"><span>Latest Reading Time:</span> <span class="reading-value">${r.time}</span></div> 
+                            <div class="reading-row"><span>Latest Overall Time:</span> <span class="reading-value">${r.time}</span></div> 
                             
                             <div class="reading-row"><span>BP (Sys/Dia):</span> 
                                 <span class="reading-value">${bp} 
-                                    <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.systole.time || r.diastole.time || 'N/A'})</span>
+                                    <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.systole.time || 'N/A'})</span>
                                 </span>
                             </div>
                             <div class="reading-row"><span>Glucose:</span> 
@@ -1594,6 +1597,11 @@
                                 <span class="reading-value">${weight}
                                     <span style="font-size:0.8em; color:#999; margin-left:5px;">(${r.weight.time || 'N/A'})</span>
                                 </span>
+                            </div>
+                            
+                            <div style="margin-top: 10px; text-align: right; padding-top: 5px; border-top: 1px dashed #eee;">
+                                <button class="action-btn edit-btn" onclick="editReading('${r.id}')">✏️ Edit Latest</button>
+                                <button class="action-btn" onclick="deleteReading('${r.id}')">❌ Delete Latest</button>
                             </div>
                         </div>`;
                     }
