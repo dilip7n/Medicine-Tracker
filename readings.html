@@ -1104,7 +1104,17 @@
                 return;
             }
             
-            calculateAndDisplayTables();
+            try {
+                calculateAndDisplayTables();
+            } catch (error) {
+                console.error("❌ CRITICAL RENDERING ERROR in calculateAndDisplayTables:", error);
+                // Fallback: Show a message if a critical error occurred during rendering
+                const errorMessage = `<p style="text-align:center; color:red; font-weight:bold;">An error occurred while loading data. Check the browser console for details: ${error.message}</p>`;
+                document.getElementById('todayAveragesContainer').innerHTML = `
+                    <div class="section-header-group">
+                        <div class="section-title-bar">☀️ Today's Individual Readings (${formatDate(todayDateString)})</div>
+                    </div>${errorMessage}`;
+            }
         }
 
         // Helper function for calculation
